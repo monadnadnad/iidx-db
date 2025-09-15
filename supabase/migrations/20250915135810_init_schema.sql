@@ -1,5 +1,5 @@
 create type play_mode  as enum ('SP','DP');
-create type chart_diff as enum ('N','H','A','L');
+create type chart_diff as enum ('B','N','H','A','L');
 
 create table songs (
   id           bigserial primary key,
