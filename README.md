@@ -1,75 +1,34 @@
-# Nuxt Minimal Starter
+# 開発
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Voltaなどでpnpmを入れる。
 
-## Setup
-
-Make sure to install dependencies:
-
-```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+```sh
+volta install pnpm
 ```
 
-## Development Server
+依存関係のインストール
 
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+```sh
+pnpm i
 ```
 
-## Production
+## Supabaseの設定
 
-Build the application for production:
+起動
 
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
+```sh
+pnpx supabase start
 ```
 
-Locally preview production build:
+DBの初期化
 
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
+```
+pnpx supabase db reset
 ```
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+.envを書く。anon keyは`pnpx supabase status`で見る。
+
+```
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=xxx
+```
