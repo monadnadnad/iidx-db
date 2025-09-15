@@ -12,6 +12,12 @@ volta install pnpm
 pnpm i
 ```
 
+開発サーバーの起動
+
+```sh
+pnpm dev
+```
+
 ## Supabaseの設定
 
 起動
