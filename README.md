@@ -28,7 +28,7 @@ pnpx supabase start
 
 DBの初期化
 
-```
+```sh
 pnpx supabase db reset
 ```
 
@@ -37,4 +37,10 @@ pnpx supabase db reset
 ```
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_ANON_KEY=xxx
+```
+
+型の生成
+
+```sh
+pnpx supabase gen types typescript --local > ./types/schema.ts
 ```
