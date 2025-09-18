@@ -121,7 +121,22 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      chart_option_vote_summary: {
+        Row: {
+          chart_id: number | null;
+          option_type: Database["public"]["Enums"]["option_type"] | null;
+          vote_count: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "option_votes_chart_id_fkey";
+            columns: ["chart_id"];
+            isOneToOne: false;
+            referencedRelation: "charts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       [_ in never]: never;

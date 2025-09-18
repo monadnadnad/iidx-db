@@ -36,4 +36,15 @@ create table option_votes (
 );
 alter table option_votes enable row level security;
 create policy option_votes_read on option_votes for select using (true);
+-- 匿名投票を禁止するように治す予定?
 create policy option_votes_write on option_votes for insert with check (true);
+
+create view chart_option_vote_summary as
+select
+  chart_id,
+  option_type,
+  count(*) as vote_count
+from option_votes
+group by chart_id, option_type;
+
+grant select on chart_option_vote_summary to anon, authenticated, service_role;
