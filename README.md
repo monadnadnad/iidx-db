@@ -43,4 +43,5 @@ SUPABASE_ANON_KEY=xxx
 
 ```sh
 pnpx supabase gen types typescript --local > ./types/schema.ts
+pnpm run format
 ```

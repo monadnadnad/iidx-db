@@ -1,7 +1,7 @@
-import type { Database } from "../../types/schema";
+import type { TablesInsert } from "~~/types/schema";
 import { supabase } from "../utils/supabase";
 
-type VoteInsert = Database["public"]["Tables"]["option_votes"]["Insert"];
+type VoteInsert = TablesInsert<"option_votes">;
 
 export default defineEventHandler(async (event) => {
   const { chart_id, option_type } = await readBody<VoteInsert>(event);

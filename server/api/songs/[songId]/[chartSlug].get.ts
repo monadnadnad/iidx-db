@@ -1,25 +1,10 @@
-import type { Database } from "~~/types/schema";
 import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
 import { Constants } from "~~/types/schema";
 import { supabase } from "../../../utils/supabase";
 
-type SongRow = Database["public"]["Tables"]["songs"]["Row"];
-type ChartRow = Database["public"]["Tables"]["charts"]["Row"];
-type VoteSummaryRow = Database["public"]["Views"]["chart_option_vote_summary"]["Row"];
-type SongSummary = Pick<SongRow, "id" | "title" | "bpm_min" | "bpm_max" | "textage_tag">;
-type Response = {
-  song: SongSummary;
-  chart: ChartRow & { slug: ChartSlug };
-  optionVotes: Array<{
-    chart_id: ChartRow["id"];
-    option_type: VoteSummaryRow["option_type"];
-    vote_count: number;
-  }>;
-};
+const optionTypes = Constants.public.Enums.option_type;
 
-const optionTypes = Constants.public.Enums.option_type as readonly VoteSummaryRow["option_type"][];
-
-export default defineEventHandler(async (event): Promise<Response> => {
+export default defineEventHandler(async (event) => {
   const songIdParam = getRouterParam(event, "songId");
   const chartSlugParam = getRouterParam(event, "chartSlug");
 
@@ -42,8 +27,8 @@ export default defineEventHandler(async (event): Promise<Response> => {
     .from("charts")
     .select(
       `
-        id, song_id, play_mode, diff, level, notes,
-        song:song_id!inner ( id, title, bpm_min, bpm_max, textage_tag )
+      id, song_id, play_mode, diff, level, notes,
+      song:song_id!inner ( id, title, bpm_min, bpm_max, textage_tag )
       `,
     )
     .eq("song_id", songId)
@@ -55,9 +40,7 @@ export default defineEventHandler(async (event): Promise<Response> => {
     throw createError({ statusCode: 404, statusMessage: "Chart not found." });
   }
 
-  const { song: rawSong, ...chart } = chartData;
-  // ユニークキー制約がないのでハンドルする
-  const song = Array.isArray(rawSong) ? rawSong[0] : rawSong;
+  const { song, ...chart } = chartData;
 
   if (!song) {
     throw createError({ statusCode: 500, statusMessage: "Related song not found." });
@@ -74,7 +57,7 @@ export default defineEventHandler(async (event): Promise<Response> => {
 
   const voteMap = new Map((voteSummaries ?? []).map((summary) => [summary.option_type, summary.vote_count]));
 
-  const optionVotes: Response["optionVotes"] = optionTypes.map((optionType) => ({
+  const optionVotes = optionTypes.map((optionType) => ({
     chart_id: chart.id,
     option_type: optionType,
     vote_count: voteMap.get(optionType) ?? 0,
