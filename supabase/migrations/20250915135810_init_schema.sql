@@ -28,23 +28,21 @@ alter table charts enable row level security;
 create policy charts_read on charts for select using (true);
 
 
-create table option_votes (
+create table chart_option_posts (
   id           bigserial primary key,
   chart_id     bigint not null references charts(id) on delete cascade,
   option_type  option_type not null,
-  created_at   timestamptz not null default now()
+  comment      varchar(255),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
 );
-alter table option_votes enable row level security;
-create policy option_votes_read on option_votes for select using (true);
--- 匿名投票を禁止するように治す予定?
-create policy option_votes_write on option_votes for insert with check (true);
 
-create view chart_option_vote_summary as
-select
-  chart_id,
-  option_type,
-  count(*) as vote_count
-from option_votes
-group by chart_id, option_type;
 
-grant select on chart_option_vote_summary to anon, authenticated, service_role;
+create table chart_haichi_posts (
+  id           bigserial primary key,
+  chart_id     bigint not null references charts(id) on delete cascade,
+  lane_text    varchar(7) not null,
+  comment      varchar(255),
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);

@@ -1,8 +1,5 @@
 import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
-import { Constants } from "~~/types/schema";
 import { supabase } from "../../../utils/supabase";
-
-const optionTypes = Constants.public.Enums.option_type;
 
 export default defineEventHandler(async (event) => {
   const songIdParam = getRouterParam(event, "songId");
@@ -46,26 +43,30 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: "Related song not found." });
   }
 
-  const { data: voteSummaries, error: voteSummaryError } = await supabase
-    .from("chart_option_vote_summary")
-    .select("option_type, vote_count")
-    .eq("chart_id", chart.id);
+  const { data: optionPosts, error: optionPostsError } = await supabase
+    .from("chart_option_posts")
+    .select("id, chart_id, option_type, comment, created_at, updated_at")
+    .eq("chart_id", chart.id)
+    .order("created_at", { ascending: false });
 
-  if (voteSummaryError) {
-    throw createError({ statusCode: 500, statusMessage: voteSummaryError.message });
+  if (optionPostsError) {
+    throw createError({ statusCode: 500, statusMessage: optionPostsError.message });
   }
 
-  const voteMap = new Map((voteSummaries ?? []).map((summary) => [summary.option_type, summary.vote_count]));
+  const { data: haichiPosts, error: haichiPostsError } = await supabase
+    .from("chart_haichi_posts")
+    .select("id, chart_id, lane_text, comment, created_at, updated_at")
+    .eq("chart_id", chart.id)
+    .order("created_at", { ascending: false });
 
-  const optionVotes = optionTypes.map((optionType) => ({
-    chart_id: chart.id,
-    option_type: optionType,
-    vote_count: voteMap.get(optionType) ?? 0,
-  }));
+  if (haichiPostsError) {
+    throw createError({ statusCode: 500, statusMessage: haichiPostsError.message });
+  }
 
   return {
     song,
     chart: { ...chart, slug: normalizedSlug as ChartSlug },
-    optionVotes,
+    optionPosts,
+    haichiPosts,
   };
 });

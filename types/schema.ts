@@ -28,6 +28,76 @@ export type Database = {
   };
   public: {
     Tables: {
+      chart_haichi_posts: {
+        Row: {
+          chart_id: number;
+          comment: string | null;
+          created_at: string;
+          id: number;
+          lane_text: string;
+          updated_at: string;
+        };
+        Insert: {
+          chart_id: number;
+          comment?: string | null;
+          created_at?: string;
+          id?: number;
+          lane_text: string;
+          updated_at?: string;
+        };
+        Update: {
+          chart_id?: number;
+          comment?: string | null;
+          created_at?: string;
+          id?: number;
+          lane_text?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chart_haichi_posts_chart_id_fkey";
+            columns: ["chart_id"];
+            isOneToOne: false;
+            referencedRelation: "charts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      chart_option_posts: {
+        Row: {
+          chart_id: number;
+          comment: string | null;
+          created_at: string;
+          id: number;
+          option_type: Database["public"]["Enums"]["option_type"];
+          updated_at: string;
+        };
+        Insert: {
+          chart_id: number;
+          comment?: string | null;
+          created_at?: string;
+          id?: number;
+          option_type: Database["public"]["Enums"]["option_type"];
+          updated_at?: string;
+        };
+        Update: {
+          chart_id?: number;
+          comment?: string | null;
+          created_at?: string;
+          id?: number;
+          option_type?: Database["public"]["Enums"]["option_type"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chart_option_posts_chart_id_fkey";
+            columns: ["chart_id"];
+            isOneToOne: false;
+            referencedRelation: "charts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       charts: {
         Row: {
           diff: Database["public"]["Enums"]["chart_diff"];
@@ -63,35 +133,6 @@ export type Database = {
           },
         ];
       };
-      option_votes: {
-        Row: {
-          chart_id: number;
-          created_at: string;
-          id: number;
-          option_type: Database["public"]["Enums"]["option_type"];
-        };
-        Insert: {
-          chart_id: number;
-          created_at?: string;
-          id?: number;
-          option_type: Database["public"]["Enums"]["option_type"];
-        };
-        Update: {
-          chart_id?: number;
-          created_at?: string;
-          id?: number;
-          option_type?: Database["public"]["Enums"]["option_type"];
-        };
-        Relationships: [
-          {
-            foreignKeyName: "option_votes_chart_id_fkey";
-            columns: ["chart_id"];
-            isOneToOne: false;
-            referencedRelation: "charts";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       songs: {
         Row: {
           bpm_max: number;
@@ -121,22 +162,7 @@ export type Database = {
       };
     };
     Views: {
-      chart_option_vote_summary: {
-        Row: {
-          chart_id: number | null;
-          option_type: Database["public"]["Enums"]["option_type"] | null;
-          vote_count: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "option_votes_chart_id_fkey";
-            columns: ["chart_id"];
-            isOneToOne: false;
-            referencedRelation: "charts";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+      [_ in never]: never;
     };
     Functions: {
       [_ in never]: never;

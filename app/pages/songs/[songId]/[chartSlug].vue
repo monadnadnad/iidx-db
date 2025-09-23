@@ -1,22 +1,53 @@
 <template>
   <div>
-    <div v-if="error">Failed to load: {{ error.message }}</div>
-    <div v-else-if="!chartData">No chart data was found.</div>
+    <p v-if="error">{{ error.message }}</p>
+    <p v-else-if="pending">Loading chart...</p>
+    <p v-else-if="!chartData">Chart data is missing.</p>
     <div v-else>
       <h1>{{ chartData.song.title }}</h1>
-      <p>
-        {{ chartLabel }} / BPM {{ chartData.song.bpm_min }} - {{ chartData.song.bpm_max }}
-        <span v-if="chartData.chart.level"> / Lv.{{ chartData.chart.level }}</span>
-        <span v-if="chartData.chart.notes"> / {{ chartData.chart.notes }} notes</span>
-      </p>
+      <ul class="chart-meta">
+        <li>{{ chartData.chart.play_mode }}</li>
+        <li>{{ chartDiffLabels[chartData.chart.diff] }}</li>
+        <li>BPM {{ chartData.song.bpm_min }}-{{ chartData.song.bpm_max }}</li>
+        <li v-if="chartData.chart.level">Lv{{ chartData.chart.level }}</li>
+        <li v-if="chartData.chart.notes">{{ chartData.chart.notes }} notes</li>
+      </ul>
 
       <section>
-        <h2>Recommended Options</h2>
+        <h2>Option Posts</h2>
+        <form @submit.prevent="submitOptionPost">
+          <select v-model="optionType">
+            <option v-for="type in optionTypes" :key="type" :value="type">{{ type }}</option>
+          </select>
+          <input v-model="optionComment" type="text" maxlength="255" placeholder="Leave a short memo" />
+          <button type="submit" :disabled="isSubmittingOption">Post</button>
+          <span v-if="optionError" class="error">{{ optionError }}</span>
+        </form>
         <ul>
-          <li v-for="summary in chartData.optionVotes" :key="summary.option_type">
-            {{ optionLabels[summary.option_type] }}: {{ summary.vote_count }}
-            <button type="button" @click="vote(summary.option_type)">Vote</button>
+          <li v-for="post in chartData.optionPosts" :key="post.id">
+            <strong>{{ post.option_type }}</strong>
+            <span v-if="post.comment">{{ post.comment }}</span>
+            <small>{{ formatDate(post.created_at) }}</small>
           </li>
+          <li v-if="chartData.optionPosts.length === 0">No posts yet.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Haichi Posts</h2>
+        <form @submit.prevent="submitHaichiPost">
+          <input v-model="haichiText" type="text" inputmode="numeric" maxlength="7" placeholder="1234567" required />
+          <input v-model="haichiComment" type="text" maxlength="255" placeholder="Memo (optional)" />
+          <button type="submit" :disabled="isSubmittingHaichi">Post</button>
+          <span v-if="haichiError" class="error">{{ haichiError }}</span>
+        </form>
+        <ul>
+          <li v-for="post in chartData.haichiPosts" :key="post.id">
+            <strong>{{ post.lane_text }}</strong>
+            <span v-if="post.comment">{{ post.comment }}</span>
+            <small>{{ formatDate(post.created_at) }}</small>
+          </li>
+          <li v-if="chartData.haichiPosts.length === 0">No posts yet.</li>
         </ul>
       </section>
     </div>
@@ -24,56 +55,80 @@
 </template>
 
 <script setup lang="ts">
-import type { Database } from "~~/types/schema";
-import { chartDiffLabels, type ChartSlug } from "~~/shared/utils/chartSlug";
+import { Constants } from "~~/types/schema";
+import { chartDiffLabels } from "~~/shared/utils/chartSlug";
+import { isValidHaichi } from "~~/shared/utils/haichi";
 
-type OptionType = Database["public"]["Enums"]["option_type"];
-type SongRow = Database["public"]["Tables"]["songs"]["Row"];
-type ChartRow = Database["public"]["Tables"]["charts"]["Row"];
+const optionTypes = Constants.public.Enums.option_type;
+type OptionType = (typeof optionTypes)[number];
 
-type OptionVote = {
-  chart_id: ChartRow["id"];
-  option_type: OptionType;
-  vote_count: number;
-};
+const { songId, chartSlug } = useRoute().params;
 
-type ChartPageData = {
-  song: Pick<SongRow, "id" | "title" | "bpm_min" | "bpm_max" | "textage_tag">;
-  chart: Pick<ChartRow, "id" | "song_id" | "play_mode" | "diff" | "level" | "notes"> & { slug: ChartSlug };
-  optionVotes: OptionVote[];
-};
+const { data: chartData, error, pending, refresh } = await useFetch(() => `/api/songs/${songId}/${chartSlug}`);
 
-const route = useRoute();
-const songId = route.params.songId as string;
-const chartSlug = route.params.chartSlug as string;
+const optionType = ref<OptionType>(optionTypes[0] ?? "REGULAR");
+const optionComment = ref("");
+const optionError = ref<string | null>(null);
+const isSubmittingOption = ref(false);
 
-const { data, error, refresh } = await useFetch<ChartPageData>(() => `/api/songs/${songId}/${chartSlug}`, {
-  key: `song-${songId}-${chartSlug}`,
-});
+const haichiText = ref("");
+const haichiComment = ref("");
+const haichiError = ref<string | null>(null);
+const isSubmittingHaichi = ref(false);
 
-const chartData = computed(() => data.value ?? null);
-const chartLabel = computed(() => {
-  if (!chartData.value) return "";
-  return `${chartData.value.chart.play_mode} ${chartDiffLabels[chartData.value.chart.diff]}`;
-});
+const formatDate = (value: string) => new Date(value).toLocaleString();
 
-const optionLabels: Record<OptionType, string> = {
-  REGULAR: "REGULAR",
-  MIRROR: "MIRROR",
-  RANDOM: "RANDOM",
-  "R-RANDOM": "R-RANDOM",
-  "S-RANDOM": "S-RANDOM",
-};
-
-const vote = async (optionType: OptionType) => {
+const submitOptionPost = async () => {
   if (!chartData.value) return;
-  await $fetch("/api/option-votes", {
-    method: "POST",
-    body: {
-      chart_id: chartData.value.chart.id,
-      option_type: optionType,
-    },
-  });
-  await refresh();
+
+  optionError.value = null;
+  isSubmittingOption.value = true;
+  try {
+    await $fetch("/api/posts/option", {
+      method: "POST",
+      body: {
+        chart_id: chartData.value.chart.id,
+        option_type: optionType.value,
+        comment: optionComment.value.trim() || null,
+      },
+    });
+    optionComment.value = "";
+    await refresh();
+  } catch (err) {
+    optionError.value = err instanceof Error ? err.message : "Failed to post";
+  } finally {
+    isSubmittingOption.value = false;
+  }
+};
+
+const submitHaichiPost = async () => {
+  if (!chartData.value) return;
+
+  haichiError.value = null;
+
+  const text = haichiText.value.trim();
+  if (!isValidHaichi(text)) {
+    haichiError.value = "配置が正しくない";
+    return;
+  }
+
+  isSubmittingHaichi.value = true;
+  try {
+    await $fetch("/api/posts/haichi", {
+      method: "POST",
+      body: {
+        chart_id: chartData.value.chart.id,
+        lane_text: text,
+        comment: haichiComment.value.trim() || null,
+      },
+    });
+    haichiText.value = "";
+    haichiComment.value = "";
+    await refresh();
+  } catch (err) {
+    haichiError.value = err instanceof Error ? err.message : "Failed to post";
+  } finally {
+    isSubmittingHaichi.value = false;
+  }
 };
 </script>
