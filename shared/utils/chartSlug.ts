@@ -1,4 +1,4 @@
-import type { Database } from "~~/types/schema";
+import type { Database } from "~~/types/database.types";
 
 type ChartMode = Database["public"]["Enums"]["play_mode"];
 type ChartDiff = Database["public"]["Enums"]["chart_diff"];

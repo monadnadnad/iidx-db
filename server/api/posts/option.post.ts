@@ -1,9 +1,11 @@
-import type { TablesInsert } from "~~/types/schema";
-import { supabase } from "../../utils/supabase";
+import { serverSupabaseClient } from "#supabase/server";
+import type { TablesInsert } from "~~/types/database.types";
 
 type OptionPostInsert = TablesInsert<"chart_option_posts">;
 
 export default defineEventHandler(async (event) => {
+  const client = await serverSupabaseClient(event);
+
   const payload = await readBody<OptionPostInsert | null>(event);
   const chartId = payload?.chart_id;
   const optionType = payload?.option_type;
@@ -21,7 +23,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "comment must be 255 characters or fewer" });
   }
 
-  const { error } = await supabase.from("chart_option_posts").insert({
+  const { error } = await client.from("chart_option_posts").insert({
     chart_id: chartId,
     option_type: optionType,
     comment,

@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { Constants } from "~~/types/schema";
+import { Constants } from "~~/types/database.types";
 import { chartDiffLabels } from "~~/shared/utils/chartSlug";
 import { isValidHaichi } from "~~/shared/utils/haichi";
 

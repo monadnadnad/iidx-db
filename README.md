@@ -26,22 +26,22 @@ pnpm dev
 pnpx supabase start
 ```
 
+.envを書く。
+
+```
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_KEY=xxx
+```
+
 DBの初期化
 
 ```sh
 pnpx supabase db reset
 ```
 
-.envを書く。anon keyは`pnpx supabase status`で見る。
-
-```
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_ANON_KEY=xxx
-```
-
 型の生成
 
 ```sh
-pnpx supabase gen types typescript --local > ./types/schema.ts
+pnpx supabase gen types typescript --local > types/database.types.ts
 pnpm run format
 ```

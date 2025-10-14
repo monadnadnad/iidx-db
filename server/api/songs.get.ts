@@ -1,7 +1,9 @@
-import { supabase } from "../utils/supabase";
+import { serverSupabaseClient } from "#supabase/server";
 
-export default defineEventHandler(async () => {
-  const { data, error } = await supabase
+export default defineEventHandler(async (event) => {
+  const client = await serverSupabaseClient(event);
+
+  const { data, error } = await client
     .from("songs")
     .select("id,title,textage_tag,bpm_min,bpm_max,charts(id,play_mode,diff,level,notes)");
 

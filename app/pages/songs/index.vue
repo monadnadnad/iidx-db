@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Database } from "~~/types/schema";
+import type { Database } from "~~/types/database.types";
 import { chartDiffLabels, slugByModeDiff, type ChartSlug } from "~~/shared/utils/chartSlug";
 
 type SongRow = Database["public"]["Tables"]["songs"]["Row"];

@@ -1,7 +1,9 @@
 import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
-import { supabase } from "../../../utils/supabase";
+import { serverSupabaseClient } from "#supabase/server";
 
 export default defineEventHandler(async (event) => {
+  const client = await serverSupabaseClient(event);
+
   const songIdParam = getRouterParam(event, "songId");
   const chartSlugParam = getRouterParam(event, "chartSlug");
 
@@ -20,7 +22,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, statusMessage: "Chart slug not recognized." });
   }
 
-  const { data: chartData, error: chartError } = await supabase
+  const { data: chartData, error: chartError } = await client
     .from("charts")
     .select(
       `
@@ -43,7 +45,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: "Related song not found." });
   }
 
-  const { data: optionPosts, error: optionPostsError } = await supabase
+  const { data: optionPosts, error: optionPostsError } = await client
     .from("chart_option_posts")
     .select("id, chart_id, option_type, comment, created_at, updated_at")
     .eq("chart_id", chart.id)
@@ -53,7 +55,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: optionPostsError.message });
   }
 
-  const { data: haichiPosts, error: haichiPostsError } = await supabase
+  const { data: haichiPosts, error: haichiPostsError } = await client
     .from("chart_haichi_posts")
     .select("id, chart_id, lane_text, comment, created_at, updated_at")
     .eq("chart_id", chart.id)

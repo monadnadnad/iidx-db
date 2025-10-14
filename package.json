@@ -12,13 +12,12 @@
     "format:check": "prettier . --check"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4",
+    "@nuxtjs/supabase": "2.0.1",
     "nuxt": "^4.0.3",
     "vue": "^3.5.20",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "prettier": "^3.6.2",
-    "supabase": "^2.40.7"
+    "prettier": "^3.6.2"
   }
 }

@@ -1,10 +1,12 @@
-import type { TablesInsert } from "~~/types/schema";
+import { serverSupabaseClient } from "#supabase/server";
+
 import { isValidHaichi } from "~~/shared/utils/haichi";
-import { supabase } from "../../utils/supabase";
+import type { TablesInsert } from "~~/types/database.types";
 
 type HaichiPostInsert = TablesInsert<"chart_haichi_posts">;
 
 export default defineEventHandler(async (event) => {
+  const client = await serverSupabaseClient(event);
   const payload = await readBody<HaichiPostInsert | null>(event);
   const chartId = payload?.chart_id;
   const laneText = typeof payload?.lane_text === "string" ? payload.lane_text.trim() : "";
@@ -29,7 +31,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "comment must be 255 characters or fewer" });
   }
 
-  const { error } = await supabase.from("chart_haichi_posts").insert({
+  const { error } = await client.from("chart_haichi_posts").insert({
     chart_id: chartId,
     lane_text: laneText,
     comment,
