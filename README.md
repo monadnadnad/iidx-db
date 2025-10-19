@@ -18,6 +18,12 @@ pnpm i
 pnpm dev
 ```
 
+テスト
+
+```sh
+pnpm vitest run
+```
+
 ## Supabaseの設定
 
 起動

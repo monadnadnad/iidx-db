@@ -28,48 +28,43 @@ export type Database = {
   };
   public: {
     Tables: {
-      chart_haichi_posts: {
+      chart_recommendation_lane_texts: {
         Row: {
-          chart_id: number;
-          comment: string | null;
           created_at: string;
-          id: number;
-          lane_text: string;
+          lane_text_1p: string;
+          recommendation_id: number;
           updated_at: string;
         };
         Insert: {
-          chart_id: number;
-          comment?: string | null;
           created_at?: string;
-          id?: number;
-          lane_text: string;
+          lane_text_1p: string;
+          recommendation_id: number;
           updated_at?: string;
         };
         Update: {
-          chart_id?: number;
-          comment?: string | null;
           created_at?: string;
-          id?: number;
-          lane_text?: string;
+          lane_text_1p?: string;
+          recommendation_id?: number;
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "chart_haichi_posts_chart_id_fkey";
-            columns: ["chart_id"];
-            isOneToOne: false;
-            referencedRelation: "charts";
+            foreignKeyName: "chart_recommendation_lane_texts_recommendation_id_fkey";
+            columns: ["recommendation_id"];
+            isOneToOne: true;
+            referencedRelation: "chart_recommendations";
             referencedColumns: ["id"];
           },
         ];
       };
-      chart_option_posts: {
+      chart_recommendations: {
         Row: {
           chart_id: number;
           comment: string | null;
           created_at: string;
           id: number;
           option_type: Database["public"]["Enums"]["option_type"];
+          play_side: Database["public"]["Enums"]["play_side"];
           updated_at: string;
         };
         Insert: {
@@ -78,6 +73,7 @@ export type Database = {
           created_at?: string;
           id?: number;
           option_type: Database["public"]["Enums"]["option_type"];
+          play_side: Database["public"]["Enums"]["play_side"];
           updated_at?: string;
         };
         Update: {
@@ -86,11 +82,12 @@ export type Database = {
           created_at?: string;
           id?: number;
           option_type?: Database["public"]["Enums"]["option_type"];
+          play_side?: Database["public"]["Enums"]["play_side"];
           updated_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "chart_option_posts_chart_id_fkey";
+            foreignKeyName: "chart_recommendations_chart_id_fkey";
             columns: ["chart_id"];
             isOneToOne: false;
             referencedRelation: "charts";
@@ -171,6 +168,7 @@ export type Database = {
       chart_diff: "B" | "N" | "H" | "A" | "L";
       option_type: "REGULAR" | "MIRROR" | "RANDOM" | "R-RANDOM" | "S-RANDOM";
       play_mode: "SP" | "DP";
+      play_side: "1P" | "2P";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -296,6 +294,7 @@ export const Constants = {
       chart_diff: ["B", "N", "H", "A", "L"],
       option_type: ["REGULAR", "MIRROR", "RANDOM", "R-RANDOM", "S-RANDOM"],
       play_mode: ["SP", "DP"],
+      play_side: ["1P", "2P"],
     },
   },
 } as const;

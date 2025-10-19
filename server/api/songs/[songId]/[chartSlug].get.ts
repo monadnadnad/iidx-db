@@ -1,5 +1,6 @@
-import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
 import { serverSupabaseClient } from "#supabase/server";
+import { RecommendationResponseSchema } from "~~/server/api/recommendations/schema";
+import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
 
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient(event);
@@ -41,34 +42,36 @@ export default defineEventHandler(async (event) => {
 
   const { song, ...chart } = chartData;
 
-  if (!song) {
-    throw createError({ statusCode: 500, statusMessage: "Related song not found." });
-  }
-
-  const { data: optionPosts, error: optionPostsError } = await client
-    .from("chart_option_posts")
-    .select("id, chart_id, option_type, comment, created_at, updated_at")
+  const { data: recommendationRows, error: recommendationsError } = await client
+    .from("chart_recommendations")
+    .select(
+      `
+      id, chart_id, play_side, option_type, comment, created_at,
+      lane:chart_recommendation_lane_texts(lane_text_1p)
+      `,
+    )
     .eq("chart_id", chart.id)
     .order("created_at", { ascending: false });
 
-  if (optionPostsError) {
-    throw createError({ statusCode: 500, statusMessage: optionPostsError.message });
+  if (recommendationsError) {
+    throw createError({ statusCode: 500, statusMessage: recommendationsError.message });
   }
 
-  const { data: haichiPosts, error: haichiPostsError } = await client
-    .from("chart_haichi_posts")
-    .select("id, chart_id, lane_text, comment, created_at, updated_at")
-    .eq("chart_id", chart.id)
-    .order("created_at", { ascending: false });
-
-  if (haichiPostsError) {
-    throw createError({ statusCode: 500, statusMessage: haichiPostsError.message });
-  }
+  const recommendations = (recommendationRows ?? []).map((row) => {
+    return RecommendationResponseSchema.parse({
+      id: row.id,
+      chartId: row.chart_id,
+      playSide: row.play_side,
+      optionType: row.option_type,
+      comment: row.comment,
+      createdAt: row.created_at,
+      laneText1P: row.lane?.lane_text_1p,
+    });
+  });
 
   return {
     song,
     chart: { ...chart, slug: normalizedSlug as ChartSlug },
-    optionPosts,
-    haichiPosts,
+    recommendations,
   };
 });

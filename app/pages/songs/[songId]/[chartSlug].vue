@@ -1,134 +1,120 @@
 <template>
   <div>
     <p v-if="error">{{ error.message }}</p>
-    <p v-else-if="pending">Loading chart...</p>
-    <p v-else-if="!chartData">Chart data is missing.</p>
+    <p v-else-if="pending">Loading...</p>
     <div v-else>
-      <h1>{{ chartData.song.title }}</h1>
-      <ul class="chart-meta">
-        <li>{{ chartData.chart.play_mode }}</li>
-        <li>{{ chartDiffLabels[chartData.chart.diff] }}</li>
-        <li>BPM {{ chartData.song.bpm_min }}-{{ chartData.song.bpm_max }}</li>
-        <li v-if="chartData.chart.level">Lv{{ chartData.chart.level }}</li>
-        <li v-if="chartData.chart.notes">{{ chartData.chart.notes }} notes</li>
+      <h1 data-test="song-title">{{ chartData.song.title }}</h1>
+      <form data-test="recommendation-form" @submit.prevent="submitRecommendation">
+        <select v-model="recommendationForm.playSide">
+          <option v-for="side in playSides" :key="side" :value="side">{{ side }}</option>
+        </select>
+        <select v-model="recommendationForm.optionType">
+          <option v-for="type in optionTypes" :key="type" :value="type">{{ type }}</option>
+        </select>
+        <input v-if="canInputLaneText" v-model="recommendationForm.laneText" maxlength="7" placeholder="lane" />
+        <input v-model="recommendationForm.comment" maxlength="255" placeholder="comment" />
+        <button type="submit" :disabled="isSubmittingRecommendation">Send</button>
+        <span v-if="recommendationError" class="error">{{ recommendationError }}</span>
+      </form>
+      <ul data-test="recommendation-list">
+        <li v-for="item in recommendations" :key="item.id">
+          {{ item.playSide }} / {{ item.optionType }} /
+          <span v-if="item.laneText1P">{{ fromLaneText1P(item.playSide, item.laneText1P) }} /</span>
+          <span v-if="item.comment">{{ item.comment }} /</span>
+          {{ item.createdAt }}
+        </li>
+        <li v-if="recommendations.length === 0">No recommendations</li>
       </ul>
-
-      <section>
-        <h2>Option Posts</h2>
-        <form @submit.prevent="submitOptionPost">
-          <select v-model="optionType">
-            <option v-for="type in optionTypes" :key="type" :value="type">{{ type }}</option>
-          </select>
-          <input v-model="optionComment" type="text" maxlength="255" placeholder="Leave a short memo" />
-          <button type="submit" :disabled="isSubmittingOption">Post</button>
-          <span v-if="optionError" class="error">{{ optionError }}</span>
-        </form>
-        <ul>
-          <li v-for="post in chartData.optionPosts" :key="post.id">
-            <strong>{{ post.option_type }}</strong>
-            <span v-if="post.comment">{{ post.comment }}</span>
-            <small>{{ formatDate(post.created_at) }}</small>
-          </li>
-          <li v-if="chartData.optionPosts.length === 0">No posts yet.</li>
-        </ul>
-      </section>
-
-      <section>
-        <h2>Haichi Posts</h2>
-        <form @submit.prevent="submitHaichiPost">
-          <input v-model="haichiText" type="text" inputmode="numeric" maxlength="7" placeholder="1234567" required />
-          <input v-model="haichiComment" type="text" maxlength="255" placeholder="Memo (optional)" />
-          <button type="submit" :disabled="isSubmittingHaichi">Post</button>
-          <span v-if="haichiError" class="error">{{ haichiError }}</span>
-        </form>
-        <ul>
-          <li v-for="post in chartData.haichiPosts" :key="post.id">
-            <strong>{{ post.lane_text }}</strong>
-            <span v-if="post.comment">{{ post.comment }}</span>
-            <small>{{ formatDate(post.created_at) }}</small>
-          </li>
-          <li v-if="chartData.haichiPosts.length === 0">No posts yet.</li>
-        </ul>
-      </section>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { Constants } from "~~/types/database.types";
-import { chartDiffLabels } from "~~/shared/utils/chartSlug";
-import { isValidHaichi } from "~~/shared/utils/haichi";
+import { computed, reactive, ref, watch } from "vue";
 
-const optionTypes = Constants.public.Enums.option_type;
-type OptionType = (typeof optionTypes)[number];
+import { fromLaneText1P } from "~~/shared/utils/haichi";
+import { OPTION_TYPES, PLAY_SIDES, type OptionType, type PlaySide } from "~~/shared/types";
+import { RecommendationPostSchema, type RecommendationResponse } from "~~/server/api/recommendations/schema";
+
+type ChartPageData = {
+  song: { title: string };
+  chart: { id: number };
+  recommendations: RecommendationResponse[];
+};
+
+const optionTypes = OPTION_TYPES;
+const playSides = PLAY_SIDES;
 
 const { songId, chartSlug } = useRoute().params;
 
-const { data: chartData, error, pending, refresh } = await useFetch(() => `/api/songs/${songId}/${chartSlug}`);
+const {
+  data: chartDataRef,
+  error,
+  pending,
+  refresh,
+} = await useFetch<ChartPageData>(() => `/api/songs/${songId}/${chartSlug}`);
 
-const optionType = ref<OptionType>(optionTypes[0] ?? "REGULAR");
-const optionComment = ref("");
-const optionError = ref<string | null>(null);
-const isSubmittingOption = ref(false);
+const chartData = computed(() => chartDataRef.value ?? { song: { title: "" }, chart: { id: 0 }, recommendations: [] });
+const recommendations = computed(() => chartDataRef.value?.recommendations ?? []);
 
-const haichiText = ref("");
-const haichiComment = ref("");
-const haichiError = ref<string | null>(null);
-const isSubmittingHaichi = ref(false);
+const recommendationForm = reactive<{
+  playSide: PlaySide;
+  optionType: OptionType;
+  laneText: string;
+  comment: string;
+}>({
+  playSide: "1P",
+  optionType: "RANDOM",
+  laneText: "",
+  comment: "",
+});
 
-const formatDate = (value: string) => new Date(value).toLocaleString();
+const canInputLaneText = computed(() => ["RANDOM", "R-RANDOM"].includes(recommendationForm.optionType));
 
-const submitOptionPost = async () => {
-  if (!chartData.value) return;
+const recommendationError = ref<string | null>(null);
+const isSubmittingRecommendation = ref(false);
 
-  optionError.value = null;
-  isSubmittingOption.value = true;
-  try {
-    await $fetch("/api/posts/option", {
-      method: "POST",
-      body: {
-        chart_id: chartData.value.chart.id,
-        option_type: optionType.value,
-        comment: optionComment.value.trim() || null,
-      },
-    });
-    optionComment.value = "";
-    await refresh();
-  } catch (err) {
-    optionError.value = err instanceof Error ? err.message : "Failed to post";
-  } finally {
-    isSubmittingOption.value = false;
-  }
-};
+watch(
+  () => recommendationForm.optionType,
+  () => {
+    if (!canInputLaneText.value) {
+      recommendationForm.laneText = "";
+    }
+  },
+);
 
-const submitHaichiPost = async () => {
-  if (!chartData.value) return;
+const submitRecommendation = async () => {
+  if (!chartDataRef.value) return;
 
-  haichiError.value = null;
+  recommendationError.value = null;
 
-  const text = haichiText.value.trim();
-  if (!isValidHaichi(text)) {
-    haichiError.value = "配置が正しくない";
+  const laneText = recommendationForm.laneText.trim();
+
+  const parsed = RecommendationPostSchema.safeParse({
+    chartId: chartDataRef.value.chart.id,
+    playSide: recommendationForm.playSide,
+    optionType: recommendationForm.optionType,
+    laneText: laneText.length > 0 ? laneText : undefined,
+    comment: recommendationForm.comment.trim(),
+  });
+  if (!parsed.success) {
+    recommendationError.value = parsed.error.issues[0]!.message;
     return;
   }
 
-  isSubmittingHaichi.value = true;
+  isSubmittingRecommendation.value = true;
   try {
-    await $fetch("/api/posts/haichi", {
+    await $fetch("/api/recommendations", {
       method: "POST",
-      body: {
-        chart_id: chartData.value.chart.id,
-        lane_text: text,
-        comment: haichiComment.value.trim() || null,
-      },
+      body: parsed.data,
     });
-    haichiText.value = "";
-    haichiComment.value = "";
+    recommendationForm.laneText = "";
+    recommendationForm.comment = "";
     await refresh();
   } catch (err) {
-    haichiError.value = err instanceof Error ? err.message : "Failed to post";
+    recommendationError.value = err instanceof Error ? err.message : "Failed";
   } finally {
-    isSubmittingHaichi.value = false;
+    isSubmittingRecommendation.value = false;
   }
 };
 </script>

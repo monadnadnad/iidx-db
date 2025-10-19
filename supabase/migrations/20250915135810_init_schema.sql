@@ -1,6 +1,7 @@
 create type play_mode as enum ('SP', 'DP');
 create type option_type as enum ('REGULAR', 'MIRROR', 'RANDOM', 'R-RANDOM', 'S-RANDOM');
 create type chart_diff as enum ('B', 'N', 'H', 'A', 'L');
+create type play_side as enum ('1P', '2P');
 
 create table songs (
   id           bigserial primary key,
@@ -28,9 +29,10 @@ alter table charts enable row level security;
 create policy charts_read on charts for select using (true);
 
 
-create table chart_option_posts (
+create table chart_recommendations (
   id           bigserial primary key,
   chart_id     bigint not null references charts(id) on delete cascade,
+  play_side    play_side not null,
   option_type  option_type not null,
   comment      varchar(255),
   created_at   timestamptz not null default now(),
@@ -38,11 +40,9 @@ create table chart_option_posts (
 );
 
 
-create table chart_haichi_posts (
-  id           bigserial primary key,
-  chart_id     bigint not null references charts(id) on delete cascade,
-  lane_text    varchar(7) not null,
-  comment      varchar(255),
-  created_at   timestamptz not null default now(),
-  updated_at   timestamptz not null default now()
+create table chart_recommendation_lane_texts (
+  recommendation_id bigint primary key references chart_recommendations(id) on delete cascade,
+  lane_text_1p      varchar(7) not null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
 );
