@@ -1,4 +1,4 @@
-import { serverSupabaseClient } from "#supabase/server";
+import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import z from "zod";
 
 import type { Database } from "~~/types/database.types";
@@ -8,6 +8,15 @@ const TABLE_RECOMMENDATIONS = "chart_recommendations";
 const TABLE_LANE_TEXTS = "chart_recommendation_lane_texts";
 
 export default defineEventHandler(async (event) => {
+  const user = await serverSupabaseUser(event);
+
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Authentication required",
+    });
+  }
+
   const client = await serverSupabaseClient<Database>(event);
 
   const rawBody = await readBody(event);
@@ -30,6 +39,7 @@ export default defineEventHandler(async (event) => {
       play_side: playSide,
       option_type: optionType,
       comment,
+      user_id: user.id,
     })
     .select("id, chart_id, play_side, option_type, comment, created_at")
     .single();

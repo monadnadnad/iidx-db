@@ -66,6 +66,7 @@ export type Database = {
           option_type: Database["public"]["Enums"]["option_type"];
           play_side: Database["public"]["Enums"]["play_side"];
           updated_at: string;
+          user_id: string;
         };
         Insert: {
           chart_id: number;
@@ -75,6 +76,7 @@ export type Database = {
           option_type: Database["public"]["Enums"]["option_type"];
           play_side: Database["public"]["Enums"]["play_side"];
           updated_at?: string;
+          user_id: string;
         };
         Update: {
           chart_id?: number;
@@ -84,6 +86,7 @@ export type Database = {
           option_type?: Database["public"]["Enums"]["option_type"];
           play_side?: Database["public"]["Enums"]["play_side"];
           updated_at?: string;
+          user_id?: string;
         };
         Relationships: [
           {
