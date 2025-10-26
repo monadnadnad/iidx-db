@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from "#supabase/server";
-import { RecommendationResponseSchema } from "~~/server/api/recommendations/schema";
+import { RecommendationResponseSchema } from "~~/server/application/recommendations/schema";
 import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
 
 export default defineEventHandler(async (event) => {
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
     .from("chart_recommendations")
     .select(
       `
-      id, chart_id, play_side, option_type, comment, created_at,
+      id, chart_id, play_side, option_type, comment, created_at, updated_at,
       lane:chart_recommendation_lane_texts(lane_text_1p)
       `,
     )
@@ -65,6 +65,7 @@ export default defineEventHandler(async (event) => {
       optionType: row.option_type,
       comment: row.comment,
       createdAt: row.created_at,
+      updatedAt: row.updated_at,
       laneText1P: row.lane?.lane_text_1p,
     });
   });
