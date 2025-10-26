@@ -34,7 +34,7 @@ import { computed, reactive, ref, watch } from "vue";
 
 import { fromLaneText1P } from "~~/shared/utils/haichi";
 import { OPTION_TYPES, PLAY_SIDES, type OptionType, type PlaySide } from "~~/shared/types";
-import { RecommendationPostSchema, type RecommendationResponse } from "~~/server/api/recommendations/schema";
+import { RecommendationPostSchema, type RecommendationResponse } from "~~/server/application/recommendations/schema";
 
 type ChartPageData = {
   song: { title: string };

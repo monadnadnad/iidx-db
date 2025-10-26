@@ -6,11 +6,7 @@ import type { RecommendationRepository } from "./recommendationRepository";
 export class CreateRecommendationUseCase {
   constructor(private readonly repository: Pick<RecommendationRepository, "create">) {}
 
-  async execute(input: unknown, userId: string | null): Promise<RecommendationResponse> {
-    if (!userId) {
-      throw new Error("userId is required");
-    }
-
+  async execute(input: unknown): Promise<RecommendationResponse> {
     const dto = RecommendationPostSchema.parse(input);
     const laneText1P = resolveLaneText1P(dto.playSide, dto.optionType, dto.laneText);
 
@@ -20,7 +16,6 @@ export class CreateRecommendationUseCase {
       optionType: dto.optionType,
       comment: dto.comment,
       laneText1P,
-      userId,
     });
   }
 }

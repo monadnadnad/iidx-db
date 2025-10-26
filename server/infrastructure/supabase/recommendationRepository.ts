@@ -11,7 +11,6 @@ import type { SupabaseClient } from "~~/server/infrastructure/supabase/client";
 import type { Database } from "~~/types/database.types";
 
 const TABLE_RECOMMENDATIONS = "chart_recommendations";
-const TABLE_LANE_TEXTS = "chart_recommendation_lane_texts";
 
 type RecommendationRow = Omit<Database["public"]["Tables"]["chart_recommendations"]["Row"], "user_id">;
 
@@ -21,12 +20,7 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
   async list(params: ListRecommendationsParams): Promise<RecommendationResponse[]> {
     let query = this.client
       .from(TABLE_RECOMMENDATIONS)
-      .select(
-        `
-        id, chart_id, play_side, option_type, comment, created_at, updated_at,
-        lane:chart_recommendation_lane_texts(lane_text_1p)
-        `,
-      )
+      .select("id, chart_id, play_side, option_type, comment, lane_text_1p, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (params.chartId !== undefined) {
@@ -42,7 +36,7 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
     }
 
     if (params.laneText1P) {
-      query = query.eq("chart_recommendation_lane_texts.lane_text_1p", params.laneText1P);
+      query = query.eq("lane_text_1p", params.laneText1P);
     }
 
     const { data, error } = await query;
@@ -51,7 +45,7 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
       throw new Error(error?.message ?? "Failed to fetch recommendations");
     }
 
-    return data.map((row) => this.toResponse(row, row.lane?.lane_text_1p ?? undefined));
+    return data.map((row) => this.toResponse(row));
   }
 
   async create(params: CreateRecommendationParams): Promise<RecommendationResponse> {
@@ -62,34 +56,19 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
         play_side: params.playSide,
         option_type: params.optionType,
         comment: params.comment,
-        user_id: params.userId,
+        lane_text_1p: params.laneText1P ?? null,
       })
-      .select("id, chart_id, play_side, option_type, comment, created_at, updated_at")
+      .select("id, chart_id, play_side, option_type, comment, lane_text_1p, created_at, updated_at")
       .single();
 
     if (recommendationError || !recommendationRow) {
       throw new Error(recommendationError?.message ?? "Failed to store recommendation");
     }
 
-    if (params.laneText1P) {
-      const { error: laneError } = await this.client
-        .from(TABLE_LANE_TEXTS)
-        .insert({
-          recommendation_id: recommendationRow.id,
-          lane_text_1p: params.laneText1P,
-        })
-        .single();
-
-      if (laneError) {
-        await this.client.from(TABLE_RECOMMENDATIONS).delete().eq("id", recommendationRow.id);
-        throw new Error(laneError?.message ?? "Failed to store lane text");
-      }
-    }
-
-    return this.toResponse(recommendationRow, params.laneText1P);
+    return this.toResponse(recommendationRow);
   }
 
-  private toResponse(row: RecommendationRow, laneText1P?: string): RecommendationResponse {
+  private toResponse(row: RecommendationRow): RecommendationResponse {
     return RecommendationResponseSchema.parse({
       id: row.id,
       chartId: row.chart_id,
@@ -98,7 +77,7 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
       comment: row.comment,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      laneText1P,
+      laneText1P: row.lane_text_1p ?? undefined,
     });
   }
 }

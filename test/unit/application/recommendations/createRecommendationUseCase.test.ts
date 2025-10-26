@@ -31,21 +31,13 @@ const makeRecommendation = (overrides: Partial<RecommendationResponse> = {}): Re
 });
 
 describe("CreateRecommendationUseCase", () => {
-  it("requires a userId", async () => {
-    const repository = createRepositoryMock();
-    const useCase = new CreateRecommendationUseCase(repository);
-
-    await expect(useCase.execute(basePayload, null)).rejects.toThrow(/userId is required/);
-    expect(repository.create).not.toHaveBeenCalled();
-  });
-
   it("parses payloads, derives laneText1P, and delegates to the repository", async () => {
     const repository = createRepositoryMock();
     const useCase = new CreateRecommendationUseCase(repository);
     const expected = makeRecommendation();
     repository.create.mockResolvedValue(expected);
 
-    const result = await useCase.execute(basePayload, "user-1");
+    const result = await useCase.execute(basePayload);
 
     expect(repository.create).toHaveBeenCalledWith({
       chartId: 15,
@@ -53,7 +45,6 @@ describe("CreateRecommendationUseCase", () => {
       optionType: "RANDOM",
       comment: "memo",
       laneText1P: "7654321",
-      userId: "user-1",
     });
     expect(result).toEqual(expected);
   });
@@ -63,14 +54,11 @@ describe("CreateRecommendationUseCase", () => {
     const useCase = new CreateRecommendationUseCase(repository);
 
     await expect(
-      useCase.execute(
-        {
-          ...basePayload,
-          optionType: "REGULAR",
-          laneText: "7654321",
-        },
-        "user-1",
-      ),
+      useCase.execute({
+        ...basePayload,
+        optionType: "REGULAR",
+        laneText: "7654321",
+      }),
     ).rejects.toThrow(/laneText is only allowed/);
     expect(repository.create).not.toHaveBeenCalled();
   });

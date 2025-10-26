@@ -14,7 +14,6 @@ export type CreateRecommendationParams = {
   playSide: PlaySide;
   optionType: OptionType;
   comment: string | null;
-  userId: string;
   laneText1P?: string;
 };
 

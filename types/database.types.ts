@@ -28,41 +28,13 @@ export type Database = {
   };
   public: {
     Tables: {
-      chart_recommendation_lane_texts: {
-        Row: {
-          created_at: string;
-          lane_text_1p: string;
-          recommendation_id: number;
-          updated_at: string;
-        };
-        Insert: {
-          created_at?: string;
-          lane_text_1p: string;
-          recommendation_id: number;
-          updated_at?: string;
-        };
-        Update: {
-          created_at?: string;
-          lane_text_1p?: string;
-          recommendation_id?: number;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "chart_recommendation_lane_texts_recommendation_id_fkey";
-            columns: ["recommendation_id"];
-            isOneToOne: true;
-            referencedRelation: "chart_recommendations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       chart_recommendations: {
         Row: {
           chart_id: number;
           comment: string | null;
           created_at: string;
           id: number;
+          lane_text_1p: string | null;
           option_type: Database["public"]["Enums"]["option_type"];
           play_side: Database["public"]["Enums"]["play_side"];
           updated_at: string;
@@ -73,16 +45,18 @@ export type Database = {
           comment?: string | null;
           created_at?: string;
           id?: number;
+          lane_text_1p?: string | null;
           option_type: Database["public"]["Enums"]["option_type"];
           play_side: Database["public"]["Enums"]["play_side"];
           updated_at?: string;
-          user_id: string;
+          user_id?: string;
         };
         Update: {
           chart_id?: number;
           comment?: string | null;
           created_at?: string;
           id?: number;
+          lane_text_1p?: string | null;
           option_type?: Database["public"]["Enums"]["option_type"];
           play_side?: Database["public"]["Enums"]["play_side"];
           updated_at?: string;

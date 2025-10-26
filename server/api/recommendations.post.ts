@@ -1,4 +1,4 @@
-import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
+import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
 import { CreateRecommendationUseCase } from "~~/server/application/recommendations/createRecommendationUseCase";
@@ -6,8 +6,17 @@ import { LaneTextValidationError } from "~~/server/domain/recommendations";
 import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event);
-
+  const client = await serverSupabaseClient(event);
+  const {
+    data: { user },
+    error: userError,
+  } = await client.auth.getUser();
+  if (userError) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: userError.message,
+    });
+  }
   if (!user) {
     throw createError({
       statusCode: 401,
@@ -15,13 +24,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const client = await serverSupabaseClient(event);
   const repository = new SupabaseRecommendationRepository(client);
   const useCase = new CreateRecommendationUseCase(repository);
 
   try {
     const rawBody = await readBody(event);
-    return await useCase.execute(rawBody, user.id);
+    return await useCase.execute(rawBody);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw createError({

@@ -44,12 +44,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: recommendationRows, error: recommendationsError } = await client
     .from("chart_recommendations")
-    .select(
-      `
-      id, chart_id, play_side, option_type, comment, created_at, updated_at,
-      lane:chart_recommendation_lane_texts(lane_text_1p)
-      `,
-    )
+    .select("id, chart_id, play_side, option_type, comment, lane_text_1p, created_at, updated_at")
     .eq("chart_id", chart.id)
     .order("created_at", { ascending: false });
 
@@ -66,7 +61,7 @@ export default defineEventHandler(async (event) => {
       comment: row.comment,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      laneText1P: row.lane?.lane_text_1p,
+      laneText1P: row.lane_text_1p ?? undefined,
     });
   });
 
