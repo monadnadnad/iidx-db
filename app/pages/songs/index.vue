@@ -21,35 +21,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Database } from "~~/types/database.types";
-import { chartDiffLabels, slugByModeDiff, type ChartSlug } from "~~/shared/utils/chartSlug";
+import { chartDiffLabels } from "~~/shared/utils/chartSlug";
 
-type SongRow = Database["public"]["Tables"]["songs"]["Row"];
-type ChartRow = Database["public"]["Tables"]["charts"]["Row"];
-type ChartRowApiResponse = Pick<ChartRow, "id" | "play_mode" | "diff" | "level" | "notes">;
-type ChartWithSlug = ChartRowApiResponse & { slug: ChartSlug };
-type ApiResponse = SongRow & {
-  charts: Array<ChartRowApiResponse>;
-};
-type SongSummary = SongRow & {
-  charts: Array<ChartWithSlug>;
-};
+const { data, error } = await useFetch("/api/songs");
 
-const { data, error } = await useFetch<ApiResponse[]>("/api/songs");
-
-const songs = computed<SongSummary[] | null>(() => {
-  if (!data.value) return null;
-
-  return data.value.map((song) => {
-    const charts = song.charts
-      .map((chart) => {
-        const slug = slugByModeDiff[`${chart.play_mode}-${chart.diff}`];
-        if (!slug) return null;
-        return { ...chart, slug };
-      })
-      .filter((chart): chart is ChartWithSlug => chart !== null);
-
-    return { ...song, charts };
-  });
-});
+const songs = computed(() => data.value ?? null);
 </script>

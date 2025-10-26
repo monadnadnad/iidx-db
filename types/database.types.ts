@@ -111,7 +111,6 @@ export type Database = {
         Row: {
           bpm_max: number;
           bpm_min: number;
-          created_at: string;
           id: number;
           textage_tag: string | null;
           title: string;
@@ -119,7 +118,6 @@ export type Database = {
         Insert: {
           bpm_max: number;
           bpm_min: number;
-          created_at?: string;
           id?: number;
           textage_tag?: string | null;
           title: string;
@@ -127,7 +125,6 @@ export type Database = {
         Update: {
           bpm_max?: number;
           bpm_min?: number;
-          created_at?: string;
           id?: number;
           textage_tag?: string | null;
           title?: string;

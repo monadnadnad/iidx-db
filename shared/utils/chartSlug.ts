@@ -1,10 +1,7 @@
-import type { Database } from "~~/types/database.types";
-
-type ChartMode = Database["public"]["Enums"]["play_mode"];
-type ChartDiff = Database["public"]["Enums"]["chart_diff"];
+import type { ChartDiff, PlayMode } from "~~/shared/types";
 
 type ChartSlugDefinition = {
-  mode: ChartMode;
+  mode: PlayMode;
   diff: ChartDiff;
 };
 

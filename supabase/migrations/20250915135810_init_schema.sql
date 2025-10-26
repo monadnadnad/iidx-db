@@ -9,7 +9,6 @@ create table songs (
   textage_tag  text unique,
   bpm_min      numeric not null,
   bpm_max      numeric not null,
-  created_at   timestamptz not null default now(),
   constraint bpm_bounds check (bpm_min <= bpm_max)
 );
 alter table songs enable row level security;

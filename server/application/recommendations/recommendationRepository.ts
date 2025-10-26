@@ -4,7 +4,7 @@ import type { RecommendationResponse } from "./schema";
 
 export type ListRecommendationsParams = {
   chartId?: number;
-  playSide: PlaySide;
+  playSide?: PlaySide;
   optionType?: OptionType;
   laneText1P?: string;
 };

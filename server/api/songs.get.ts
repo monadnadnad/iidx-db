@@ -1,14 +1,30 @@
 import { serverSupabaseClient } from "#supabase/server";
+import z from "zod";
+
+import { ListSongsUseCase } from "~~/server/application/songs/listSongsUseCase";
+import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
+import type { Database } from "~~/types/database.types";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient(event);
+  const client = await serverSupabaseClient<Database>(event);
+  const repository = new SupabaseSongRepository(client);
+  const useCase = new ListSongsUseCase(repository);
 
-  const { data, error } = await client
-    .from("songs")
-    .select("id,title,textage_tag,bpm_min,bpm_max,charts(id,play_mode,diff,level,notes)");
+  try {
+    return await useCase.execute();
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Song schema validation failed",
+        data: z.treeifyError(error),
+      });
+    }
 
-  if (error) {
-    throw createError({ statusCode: 500, statusMessage: error.message });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Failed to fetch songs",
+      data: error instanceof Error ? error.message : String(error),
+    });
   }
-  return data;
 });
