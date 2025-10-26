@@ -24,6 +24,7 @@
     "happy-dom": "^20.0.5",
     "playwright-core": "^1.56.1",
     "prettier": "^3.6.2",
+    "supabase": "^2.53.6",
     "vitest": "^3.2.4"
   }
 }
