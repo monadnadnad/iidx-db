@@ -31,6 +31,18 @@ pnpm dev
 pnpm vitest run
 ```
 
+lint
+
+```
+pnpm lint
+```
+
+format
+
+```
+pnpm format
+```
+
 ## Supabase CLIの設定
 
 ローカルにSupabaseを起動するため [これ](https://supabase.com/docs/guides/local-development?queryGroups=package-manager&package-manager=pnpm)を読んでおく。
@@ -83,5 +95,5 @@ DBに変更を加えた場合、スキーマの型を更新する。
 
 ```sh
 pnpx supabase gen types typescript --local > types/database.types.ts
-pnpm run format
+pnpm format
 ```

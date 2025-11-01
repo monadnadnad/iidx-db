@@ -1,4 +1,4 @@
-import { serverSupabaseClient } from "#supabase/server";
+import type { serverSupabaseClient } from "#supabase/server";
 
 import type { Database } from "~~/types/database.types";
 
