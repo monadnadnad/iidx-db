@@ -19,7 +19,7 @@
       <ul data-test="recommendation-list">
         <li v-for="item in recommendations" :key="item.id">
           {{ item.playSide }} / {{ item.optionType }} /
-          <span v-if="item.laneText1P">{{ fromLaneText1P(item.playSide, item.laneText1P) }} /</span>
+          <span v-if="item.laneText1P">{{ item.playSide === "2P" ? mirror(item.laneText1P) : item.laneText1P }} /</span>
           <span v-if="item.comment">{{ item.comment }} /</span>
           {{ item.createdAt }}
         </li>
@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue";
 
-import { fromLaneText1P } from "~~/shared/utils/haichi";
+import { mirror } from "~~/shared/utils/laneText";
 import { OPTION_TYPES, PLAY_SIDES, type OptionType, type PlaySide } from "~~/shared/types";
 import { RecommendationPostSchema, type RecommendationResponse } from "~~/server/application/recommendations/schema";
 

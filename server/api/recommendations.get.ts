@@ -2,7 +2,6 @@ import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
 import { ListRecommendationsUseCase } from "~~/server/application/recommendations/listRecommendationsUseCase";
-import { LaneTextValidationError } from "~~/server/domain/recommendations";
 import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
 import type { Database } from "~~/types/database.types";
 
@@ -20,12 +19,6 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         statusMessage: "Invalid recommendation query",
         data: z.treeifyError(error),
-      });
-    }
-    if (error instanceof LaneTextValidationError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: error.message,
       });
     }
 

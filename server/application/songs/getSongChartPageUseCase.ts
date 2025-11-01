@@ -6,7 +6,6 @@ import {
 } from "./schema";
 import type { SongRepository } from "./songRepository";
 import type { RecommendationRepository } from "../recommendations/recommendationRepository";
-import { resolveChartSlug } from "~~/server/domain/songs";
 
 export class GetSongChartPageUseCase {
   constructor(
@@ -16,11 +15,10 @@ export class GetSongChartPageUseCase {
 
   async execute(input: unknown): Promise<SongChartPageResponse> {
     const params = SongChartRouteParamsSchema.parse(input);
-    const slugDefinition = resolveChartSlug(params.chartSlug);
 
     const rawDetail = await this.songRepository.detail({
       songId: params.songId,
-      slug: slugDefinition.slug,
+      slug: params.chartSlug,
     });
     const detail = SongChartDetailSchema.parse(rawDetail);
 

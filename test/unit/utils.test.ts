@@ -1,31 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { toLaneText1P, fromLaneText1P } from "~~/shared/utils/haichi";
+import { isValidLaneText } from "~~/shared/utils/laneText";
 
-describe("toLaneText1P", () => {
-  it("returns the original text for 1P", () => {
-    expect(toLaneText1P("1P", "2345671")).toBe("2345671");
+describe("isValidLaneText", () => {
+  it("accepts 7 unique digits", () => {
+    expect(isValidLaneText("2345671")).toBe(true);
   });
 
-  it("mirrors digits for 2P inputs", () => {
-    expect(toLaneText1P("2P", "2345671")).toBe("1765432");
+  it("rejects wrong length", () => {
+    expect(isValidLaneText("1")).toBe(false);
+    expect(isValidLaneText("12345678")).toBe(false);
   });
 
-  it("throws for non-numeric input", () => {
-    expect(() => toLaneText1P("1P", "23a5671")).toThrow(/laneText must be 7 unique digits/);
-  });
-});
-
-describe("fromLaneText1P", () => {
-  it("returns the original text for 1P", () => {
-    expect(fromLaneText1P("1P", "2345671")).toBe("2345671");
+  it("rejects when digits repeat", () => {
+    expect(isValidLaneText("2234567")).toBe(false);
   });
 
-  it("mirrors digits for 2P inputs", () => {
-    expect(fromLaneText1P("2P", "2345671")).toBe("1765432");
-  });
-
-  it("throws for invalid lane text", () => {
-    expect(() => fromLaneText1P("1P", "12345")).toThrow(/laneText1P must be 7 unique digits/);
+  it("rejects inputs with non-digit characters", () => {
+    expect(isValidLaneText("23a5671")).toBe(false);
   });
 });

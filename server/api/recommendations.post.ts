@@ -2,7 +2,6 @@ import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
 import { CreateRecommendationUseCase } from "~~/server/application/recommendations/createRecommendationUseCase";
-import { LaneTextValidationError } from "~~/server/domain/recommendations";
 import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
 
 export default defineEventHandler(async (event) => {
@@ -36,12 +35,6 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         statusMessage: "Invalid recommendation payload",
         data: z.treeifyError(error),
-      });
-    }
-    if (error instanceof LaneTextValidationError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: error.message,
       });
     }
 

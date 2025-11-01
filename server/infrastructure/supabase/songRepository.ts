@@ -1,9 +1,9 @@
 import { SongChartDetailSchema, SongSummarySchema, type SongSummary } from "~~/server/application/songs/schema";
 import type { SongDetailParams, SongRepository } from "~~/server/application/songs/songRepository";
 import { ChartNotFoundError, UnknownChartSlugError } from "~~/server/domain/songs";
-import { chartSlugMap, slugByModeDiff } from "~~/shared/utils/chartSlug";
-import type { SupabaseClient } from "./client";
+import { chartSlugMap, getChartSlug } from "~~/shared/utils/chartSlug";
 import type { Database } from "~~/types/database.types";
+import type { SupabaseClient } from "./client";
 
 type SongRow = Database["public"]["Tables"]["songs"]["Row"];
 type ChartRow = Database["public"]["Tables"]["charts"]["Row"];
@@ -81,8 +81,7 @@ export class SupabaseSongRepository implements SongRepository {
     const charts =
       row.charts
         ?.map((chart) => {
-          const slugKey = `${chart.play_mode}-${chart.diff}`;
-          const slug = slugByModeDiff[slugKey];
+          const slug = getChartSlug(chart.play_mode, chart.diff);
           if (!slug) return null;
           return {
             id: chart.id,

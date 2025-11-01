@@ -9,14 +9,14 @@ const chartDiffSchema = z.enum(CHART_DIFFS);
 
 const chartSlugSchema = z
   .string()
-  .refine((value): value is ChartSlug => value in chartSlugMap, "Invalid chart slug")
-  .transform((value) => value as ChartSlug);
+  .refine((value) => value.toLowerCase() in chartSlugMap, "Invalid chart slug")
+  .transform((value) => value.toLowerCase() as ChartSlug);
 
 export const SongIdSchema = z.coerce.number().int().positive();
 
 export const SongChartRouteParamsSchema = z.object({
   songId: SongIdSchema,
-  chartSlug: z.string().min(1),
+  chartSlug: chartSlugSchema,
 });
 
 export const SongSchema = z.object({

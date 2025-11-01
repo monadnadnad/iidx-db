@@ -49,7 +49,7 @@ describe("CreateRecommendationUseCase", () => {
     expect(result).toEqual(expected);
   });
 
-  it("validates payloads via domain rules", async () => {
+  it("rejects laneText without RANDOM nor R-RANDOM", async () => {
     const repository = createRepositoryMock();
     const useCase = new CreateRecommendationUseCase(repository);
 
@@ -61,5 +61,63 @@ describe("CreateRecommendationUseCase", () => {
       }),
     ).rejects.toThrow(/laneText is only allowed/);
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it("requires lane text input for RANDOM", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+
+    await expect(
+      useCase.execute({
+        chartId: "15",
+        playSide: "1P",
+        optionType: "RANDOM",
+        comment: "memo",
+      }),
+    ).rejects.toThrow(/laneText is required for RANDOM/);
+  });
+
+  it("rejects invalid lane text patterns", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+
+    await expect(
+      useCase.execute({
+        ...basePayload,
+        laneText: "12345a7",
+      }),
+    ).rejects.toThrow(/laneText is not valid/);
+  });
+
+  it("rejects R-RANDOM with invalid laneText", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+
+    await expect(
+      useCase.execute({
+        ...basePayload,
+        optionType: "R-RANDOM",
+      }),
+    ).rejects.toThrow(/laneText must match/);
+  });
+
+  it("accepts valid R-RANDOM", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+    repository.create.mockResolvedValue(makeRecommendation({ laneText1P: "2345671", optionType: "R-RANDOM" }));
+
+    await useCase.execute({
+      ...basePayload,
+      laneText: "1765432",
+      optionType: "R-RANDOM",
+    });
+
+    expect(repository.create).toHaveBeenCalledWith({
+      chartId: 15,
+      playSide: "2P",
+      optionType: "R-RANDOM",
+      comment: "memo",
+      laneText1P: "2345671",
+    });
   });
 });

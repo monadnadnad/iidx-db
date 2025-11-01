@@ -1,10 +1,5 @@
 import type { ChartDiff, PlayMode } from "~~/shared/types";
 
-type ChartSlugDefinition = {
-  mode: PlayMode;
-  diff: ChartDiff;
-};
-
 export const chartSlugMap = {
   spb: { mode: "SP", diff: "B" },
   spn: { mode: "SP", diff: "N" },
@@ -15,17 +10,17 @@ export const chartSlugMap = {
   dph: { mode: "DP", diff: "H" },
   dpa: { mode: "DP", diff: "A" },
   dpl: { mode: "DP", diff: "L" },
-} satisfies Record<string, ChartSlugDefinition>;
+} as const;
 
 export type ChartSlug = keyof typeof chartSlugMap;
 
-export const slugByModeDiff = Object.entries(chartSlugMap).reduce<Record<string, ChartSlug>>(
-  (acc, [slug, { mode, diff }]) => {
-    acc[`${mode}-${diff}`] = slug as ChartSlug;
-    return acc;
-  },
-  {},
-);
+export const getChartSlug = (mode: PlayMode, diff: ChartDiff): ChartSlug | undefined => {
+  const slug = (mode + diff).toLowerCase();
+  if (slug in chartSlugMap) {
+    return slug as ChartSlug;
+  }
+  return undefined;
+};
 
 export const chartDiffLabels: Record<ChartDiff, string> = {
   B: "BEGINNER",
