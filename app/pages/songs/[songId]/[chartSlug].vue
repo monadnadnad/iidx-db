@@ -34,7 +34,10 @@ import { computed, reactive, ref, watch } from "vue";
 
 import { mirror } from "~~/shared/utils/laneText";
 import { OPTION_TYPES, PLAY_SIDES, type OptionType, type PlaySide } from "~~/shared/types";
-import { RecommendationPostSchema, type RecommendationResponse } from "~~/server/application/recommendations/schema";
+import {
+  CreateRecommendationRequestSchema,
+  type RecommendationResponse,
+} from "~~/server/application/recommendations/schema";
 
 type ChartPageData = {
   song: { title: string };
@@ -90,7 +93,7 @@ const submitRecommendation = async () => {
 
   const laneText = recommendationForm.laneText.trim();
 
-  const parsed = RecommendationPostSchema.safeParse({
+  const parsed = CreateRecommendationRequestSchema.safeParse({
     chartId: chartDataRef.value.chart.id,
     playSide: recommendationForm.playSide,
     optionType: recommendationForm.optionType,

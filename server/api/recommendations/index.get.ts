@@ -9,9 +9,9 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient<Database>(event);
   const repository = new SupabaseRecommendationRepository(client);
   const useCase = new ListRecommendationsUseCase(repository);
+  const rawQuery = getQuery(event);
 
   try {
-    const rawQuery = getQuery(event);
     return await useCase.execute(rawQuery);
   } catch (error) {
     if (error instanceof z.ZodError) {

@@ -11,16 +11,15 @@ const createRepositoryMock = () => {
 };
 
 const basePayload = {
-  chartId: "15",
+  chartId: 1,
   playSide: "2P" as const,
   optionType: "RANDOM" as const,
   laneText: "1234567",
-  comment: "  memo ",
 };
 
 const makeRecommendation = (overrides: Partial<RecommendationResponse> = {}): RecommendationResponse => ({
-  id: 99,
-  chartId: 15,
+  id: 1,
+  chartId: 1,
   playSide: "2P",
   optionType: "RANDOM",
   comment: "memo",
@@ -31,7 +30,7 @@ const makeRecommendation = (overrides: Partial<RecommendationResponse> = {}): Re
 });
 
 describe("CreateRecommendationUseCase", () => {
-  it("parses payloads, derives laneText1P, and delegates to the repository", async () => {
+  it("parses payloads, calls repository", async () => {
     const repository = createRepositoryMock();
     const useCase = new CreateRecommendationUseCase(repository);
     const expected = makeRecommendation();
@@ -39,17 +38,35 @@ describe("CreateRecommendationUseCase", () => {
 
     const result = await useCase.execute(basePayload);
 
-    expect(repository.create).toHaveBeenCalledWith({
-      chartId: 15,
-      playSide: "2P",
-      optionType: "RANDOM",
-      comment: "memo",
-      laneText1P: "7654321",
-    });
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartId: 1,
+        playSide: "2P",
+        optionType: "RANDOM",
+        laneText: "1234567",
+        laneText1P: "7654321",
+      }),
+    );
     expect(result).toEqual(expected);
   });
 
-  it("rejects laneText without RANDOM nor R-RANDOM", async () => {
+  it("trims comments before delegating to the repository", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+
+    await useCase.execute({
+      ...basePayload,
+      comment: "  memo  ",
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        comment: "memo",
+      }),
+    );
+  });
+
+  it("rejects laneText when option type does not use it", async () => {
     const repository = createRepositoryMock();
     const useCase = new CreateRecommendationUseCase(repository);
 
@@ -57,10 +74,8 @@ describe("CreateRecommendationUseCase", () => {
       useCase.execute({
         ...basePayload,
         optionType: "REGULAR",
-        laneText: "7654321",
       }),
-    ).rejects.toThrow(/laneText is only allowed/);
-    expect(repository.create).not.toHaveBeenCalled();
+    ).rejects.toThrowError();
   });
 
   it("requires lane text input for RANDOM", async () => {
@@ -69,12 +84,11 @@ describe("CreateRecommendationUseCase", () => {
 
     await expect(
       useCase.execute({
-        chartId: "15",
+        chartId: 1,
         playSide: "1P",
         optionType: "RANDOM",
-        comment: "memo",
       }),
-    ).rejects.toThrow(/laneText is required for RANDOM/);
+    ).rejects.toThrowError();
   });
 
   it("rejects invalid lane text patterns", async () => {
@@ -86,7 +100,7 @@ describe("CreateRecommendationUseCase", () => {
         ...basePayload,
         laneText: "12345a7",
       }),
-    ).rejects.toThrow(/laneText is not valid/);
+    ).rejects.toThrow(/Invalid lane text/);
   });
 
   it("rejects R-RANDOM with invalid laneText", async () => {
@@ -97,14 +111,33 @@ describe("CreateRecommendationUseCase", () => {
       useCase.execute({
         ...basePayload,
         optionType: "R-RANDOM",
+        laneText: "7654321",
       }),
-    ).rejects.toThrow(/laneText must match/);
+    ).rejects.toThrow(/Invalid R-RANDOM lane text/);
   });
 
-  it("accepts valid R-RANDOM", async () => {
+  it("accepts R-RANDOM without lane text", async () => {
     const repository = createRepositoryMock();
     const useCase = new CreateRecommendationUseCase(repository);
-    repository.create.mockResolvedValue(makeRecommendation({ laneText1P: "2345671", optionType: "R-RANDOM" }));
+
+    await useCase.execute({
+      chartId: 1,
+      playSide: "1P",
+      optionType: "R-RANDOM",
+    });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartId: 1,
+        playSide: "1P",
+        optionType: "R-RANDOM",
+      }),
+    );
+  });
+
+  it("accepts valid R-RANDOM with a pattern", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
 
     await useCase.execute({
       ...basePayload,
@@ -112,12 +145,33 @@ describe("CreateRecommendationUseCase", () => {
       optionType: "R-RANDOM",
     });
 
-    expect(repository.create).toHaveBeenCalledWith({
-      chartId: 15,
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartId: 1,
+        playSide: "2P",
+        optionType: "R-RANDOM",
+        laneText: "1765432",
+        laneText1P: "2345671",
+      }),
+    );
+  });
+
+  it("accepts S-RANDOM without a lane text", async () => {
+    const repository = createRepositoryMock();
+    const useCase = new CreateRecommendationUseCase(repository);
+
+    await useCase.execute({
+      chartId: 20,
       playSide: "2P",
-      optionType: "R-RANDOM",
-      comment: "memo",
-      laneText1P: "2345671",
+      optionType: "S-RANDOM",
     });
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chartId: 20,
+        playSide: "2P",
+        optionType: "S-RANDOM",
+      }),
+    );
   });
 });

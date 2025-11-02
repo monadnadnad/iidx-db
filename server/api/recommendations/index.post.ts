@@ -1,5 +1,5 @@
 import { serverSupabaseClient } from "#supabase/server";
-import z from "zod";
+import { z } from "zod";
 
 import { CreateRecommendationUseCase } from "~~/server/application/recommendations/createRecommendationUseCase";
 import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
@@ -10,24 +10,19 @@ export default defineEventHandler(async (event) => {
     data: { user },
     error: userError,
   } = await client.auth.getUser();
-  if (userError) {
+  if (userError || !user) {
     throw createError({
       statusCode: 401,
-      statusMessage: userError.message,
-    });
-  }
-  if (!user) {
-    throw createError({
-      statusCode: 401,
-      statusMessage: "Authentication required",
+      statusMessage: userError?.message ?? "Authentication required",
     });
   }
 
   const repository = new SupabaseRecommendationRepository(client);
   const useCase = new CreateRecommendationUseCase(repository);
 
+  const rawBody = await readBody(event);
+
   try {
-    const rawBody = await readBody(event);
     return await useCase.execute(rawBody);
   } catch (error) {
     if (error instanceof z.ZodError) {

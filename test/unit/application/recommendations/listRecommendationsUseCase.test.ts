@@ -30,7 +30,7 @@ describe("ListRecommendationsUseCase", () => {
     repository.list.mockResolvedValue([expected]);
 
     const result = await useCase.execute({
-      chartId: "12",
+      chartId: 12,
       playSide: "2P",
       optionType: "RANDOM",
       laneText: "1234567",

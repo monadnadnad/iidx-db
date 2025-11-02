@@ -40,10 +40,8 @@ const makeRecommendation = (overrides: Partial<RecommendationResponse> = {}): Re
   chartId: 10,
   playSide: "1P",
   optionType: "REGULAR",
-  comment: null,
   createdAt: "2025-01-01T00:00:00.000Z",
   updatedAt: "2025-01-01T00:00:00.000Z",
-  laneText1P: undefined,
   ...overrides,
 });
 

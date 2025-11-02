@@ -2,49 +2,34 @@ import { z } from "zod";
 
 import { OPTION_TYPES, PLAY_SIDES } from "~~/shared/types";
 
-const optionTypeSchema = z.enum(OPTION_TYPES);
-const playSideSchema = z.enum(PLAY_SIDES);
+export const CreateRecommendationRequestSchema = z.object({
+  chartId: z.number().int().positive(),
+  playSide: z.enum(PLAY_SIDES),
+  optionType: z.enum(OPTION_TYPES),
+  laneText: z.string().optional(),
+  comment: z.string().optional(),
+});
 
-const chartIdSchema = z.coerce.number().int().positive();
-const laneTextSchema = z.string().length(7);
-const commentSchema = z
-  .string()
-  .trim()
-  .max(255, "comment must be 255 characters or fewer")
-  .nullable()
-  .transform((s) => (s === "" ? null : s))
-  .default(null);
-
-export const RecommendationPostSchema = z
-  .object({
-    chartId: chartIdSchema,
-    playSide: playSideSchema,
-    optionType: optionTypeSchema,
-    laneText: laneTextSchema.optional(),
-    comment: commentSchema,
-  })
-  .strip();
-
-export const RecommendationQuerySchema = z
-  .object({
-    chartId: chartIdSchema.optional(),
-    playSide: playSideSchema.default("1P"),
-    optionType: optionTypeSchema.optional(),
-    laneText: laneTextSchema.optional(),
-  })
-  .strip();
+export type CreateRecommendationRequest = z.infer<typeof CreateRecommendationRequestSchema>;
 
 export const RecommendationResponseSchema = z.object({
   id: z.number().int().positive(),
-  chartId: chartIdSchema,
-  playSide: playSideSchema,
-  optionType: optionTypeSchema,
-  comment: commentSchema,
+  chartId: z.number().int().positive(),
+  playSide: z.enum(PLAY_SIDES),
+  optionType: z.enum(OPTION_TYPES),
+  comment: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   laneText1P: z.string().optional(),
 });
 
-export type RecommendationPostDto = z.output<typeof RecommendationPostSchema>;
-export type RecommendationQueryParams = z.infer<typeof RecommendationQuerySchema>;
 export type RecommendationResponse = z.infer<typeof RecommendationResponseSchema>;
+
+export const RecommendationQuerySchema = z.object({
+  chartId: z.number().int().positive().optional(),
+  playSide: z.enum(PLAY_SIDES).optional(),
+  optionType: z.enum(OPTION_TYPES).optional(),
+  laneText: z.string().optional(),
+});
+
+export type RecommendationQueryParams = z.infer<typeof RecommendationQuerySchema>;
