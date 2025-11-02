@@ -1,3 +1,4 @@
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE, type Pagination } from "~~/server/application/pagination";
 import type {
   ListRecommendationsParams,
   RecommendationRepository,
@@ -17,7 +18,13 @@ type RecommendationRow = Omit<Database["public"]["Tables"]["chart_recommendation
 export class SupabaseRecommendationRepository implements RecommendationRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async list(params: ListRecommendationsParams): Promise<RecommendationResponse[]> {
+  async list(
+    params: ListRecommendationsParams,
+    pagination: Pagination = {
+      page: DEFAULT_PAGE,
+      perPage: DEFAULT_PER_PAGE,
+    },
+  ): Promise<RecommendationResponse[]> {
     let query = this.client
       .from(TABLE_RECOMMENDATIONS)
       .select("id, chart_id, play_side, option_type, comment, lane_text_1p, created_at, updated_at")
@@ -39,7 +46,10 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
       query = query.eq("lane_text_1p", params.laneText1P);
     }
 
-    const { data, error } = await query;
+    // 一旦ここに書いておく
+    const from = (pagination.page - 1) * pagination.perPage;
+    const to = from + pagination.perPage - 1;
+    const { data, error } = await query.range(from, to);
 
     if (error || !data) {
       throw new Error(error?.message ?? "Failed to fetch recommendations");

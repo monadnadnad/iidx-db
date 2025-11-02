@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { GetSongChartPageUseCase } from "~~/server/application/songs/getSongChartPageUseCase";
-import type { SongRepository } from "~~/server/application/songs/songRepository";
-import type { SongChartDetail, SongChartPageResponse } from "~~/server/application/songs/schema";
 import type { RecommendationRepository } from "~~/server/application/recommendations/recommendationRepository";
 import type { RecommendationResponse } from "~~/server/application/recommendations/schema";
+import { GetSongChartPageUseCase } from "~~/server/application/songs/getSongChartPageUseCase";
+import type { SongChartDetail, SongChartPageResponse } from "~~/server/application/songs/schema";
+import type { SongRepository } from "~~/server/application/songs/songRepository";
 
 const createSongRepositoryMock = () => ({
   detail: vi.fn<SongRepository["detail"]>(),

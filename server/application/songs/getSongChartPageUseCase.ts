@@ -1,3 +1,4 @@
+import type { RecommendationRepository } from "../recommendations/recommendationRepository";
 import {
   SongChartDetailSchema,
   SongChartPageResponseSchema,
@@ -5,7 +6,6 @@ import {
   type SongChartPageResponse,
 } from "./schema";
 import type { SongRepository } from "./songRepository";
-import type { RecommendationRepository } from "../recommendations/recommendationRepository";
 
 export class GetSongChartPageUseCase {
   constructor(

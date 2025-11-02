@@ -1,5 +1,6 @@
-import type { Recommendation } from "~~/server/domain/recommendation";
 import type { OptionType, PlaySide } from "~~/shared/types";
+import type { Recommendation } from "~~/server/domain/recommendation";
+import type { Pagination } from "../pagination";
 import type { RecommendationResponse } from "./schema";
 
 export type ListRecommendationsParams = {
@@ -10,6 +11,6 @@ export type ListRecommendationsParams = {
 };
 
 export interface RecommendationRepository {
-  list(params: ListRecommendationsParams): Promise<RecommendationResponse[]>;
+  list(params: ListRecommendationsParams, pagination?: Pagination): Promise<RecommendationResponse[]>;
   create(recommendation: Recommendation): Promise<RecommendationResponse>;
 }

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { OPTION_TYPES, PLAY_SIDES } from "~~/shared/types";
 
 export const CreateRecommendationRequestSchema = z.object({
-  chartId: z.number().int().positive(),
+  chartId: z.coerce.number().int().positive(),
   playSide: z.enum(PLAY_SIDES),
   optionType: z.enum(OPTION_TYPES),
   laneText: z.string().optional(),
@@ -26,7 +26,7 @@ export const RecommendationResponseSchema = z.object({
 export type RecommendationResponse = z.infer<typeof RecommendationResponseSchema>;
 
 export const RecommendationQuerySchema = z.object({
-  chartId: z.number().int().positive().optional(),
+  chartId: z.coerce.number().int().positive().optional(),
   playSide: z.enum(PLAY_SIDES).optional(),
   optionType: z.enum(OPTION_TYPES).optional(),
   laneText: z.string().optional(),
