@@ -10,3 +10,9 @@ export const PaginationSchema = z.object({
 });
 
 export type Pagination = z.infer<typeof PaginationSchema>;
+
+export const getPaginationRange = ({ page, perPage }: Pagination) => {
+  const from = (page - 1) * perPage;
+  const to = from + perPage - 1;
+  return { from, to };
+};

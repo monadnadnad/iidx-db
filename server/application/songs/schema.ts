@@ -2,25 +2,18 @@ import { z } from "zod";
 
 import { CHART_DIFFS, PLAY_MODES } from "~~/shared/types";
 import { chartSlugMap, type ChartSlug } from "~~/shared/utils/chartSlug";
-import { RecommendationResponseSchema } from "../recommendations/schema";
-
-const playModeSchema = z.enum(PLAY_MODES);
-const chartDiffSchema = z.enum(CHART_DIFFS);
-
-const chartSlugSchema = z
-  .string()
-  .refine((value) => value.toLowerCase() in chartSlugMap, "Invalid chart slug")
-  .transform((value) => value.toLowerCase() as ChartSlug);
-
-export const SongIdSchema = z.coerce.number().int().positive();
+import { PaginationSchema } from "../pagination";
 
 export const SongChartRouteParamsSchema = z.object({
-  songId: SongIdSchema,
-  chartSlug: chartSlugSchema,
+  songId: z.coerce.number().int().positive(),
+  chartSlug: z
+    .string()
+    .refine((value) => value.toLowerCase() in chartSlugMap, "Invalid chart slug")
+    .transform((value) => value.toLowerCase() as ChartSlug),
 });
 
 export const SongSchema = z.object({
-  id: SongIdSchema,
+  id: z.coerce.number().int().positive(),
   title: z.string(),
   textage_tag: z.string().nullable(),
   bpm_min: z.number(),
@@ -29,15 +22,18 @@ export const SongSchema = z.object({
 
 export const SongChartSchema = z.object({
   id: z.number().int().positive(),
-  song_id: SongIdSchema,
-  play_mode: playModeSchema,
-  diff: chartDiffSchema,
+  song_id: z.coerce.number().int().positive(),
+  play_mode: z.enum(PLAY_MODES),
+  diff: z.enum(CHART_DIFFS),
   level: z.number().int().nonnegative().nullable(),
   notes: z.number().int().nonnegative().nullable(),
 });
 
 export const SongChartWithSlugSchema = SongChartSchema.extend({
-  slug: chartSlugSchema,
+  slug: z
+    .string()
+    .refine((value) => value.toLowerCase() in chartSlugMap, "Invalid chart slug")
+    .transform((value) => value.toLowerCase() as ChartSlug),
 });
 
 export const SongSummarySchema = SongSchema.extend({
@@ -51,11 +47,17 @@ export const SongChartDetailSchema = z.object({
   chart: SongChartWithSlugSchema,
 });
 
-export const SongChartPageResponseSchema = SongChartDetailSchema.extend({
-  recommendations: z.array(RecommendationResponseSchema),
+export const SongListQuerySchema = PaginationSchema.extend({
+  q: z
+    .string()
+    .trim()
+    .transform((value) => (value.length === 0 ? undefined : value))
+    .optional(),
 });
+
+export const SONG_CHART_NOT_FOUND_MESSAGE = "Song chart not found";
 
 export type SongSummary = z.infer<typeof SongSummarySchema>;
 export type SongListResponse = z.infer<typeof SongListResponseSchema>;
 export type SongChartDetail = z.infer<typeof SongChartDetailSchema>;
-export type SongChartPageResponse = z.infer<typeof SongChartPageResponseSchema>;
+export type SongListQuery = z.infer<typeof SongListQuerySchema>;

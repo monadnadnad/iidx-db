@@ -9,14 +9,15 @@ export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient<Database>(event);
   const repository = new SupabaseSongRepository(client);
   const useCase = new ListSongsUseCase(repository);
+  const rawQuery = getQuery(event);
 
   try {
-    return await useCase.execute();
+    return await useCase.execute(rawQuery);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw createError({
-        statusCode: 500,
-        statusMessage: "Song schema validation failed",
+        statusCode: 400,
+        statusMessage: "Invalid song query",
         data: z.treeifyError(error),
       });
     }

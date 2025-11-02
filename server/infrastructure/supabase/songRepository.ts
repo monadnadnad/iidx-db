@@ -1,6 +1,11 @@
-import { SongChartDetailSchema, SongSummarySchema, type SongSummary } from "~~/server/application/songs/schema";
+import {
+  SongChartDetailSchema,
+  SongSummarySchema,
+  type SongListQuery,
+  type SongSummary,
+} from "~~/server/application/songs/schema";
 import type { SongDetailParams, SongRepository } from "~~/server/application/songs/songRepository";
-import { ChartNotFoundError, UnknownChartSlugError } from "~~/server/domain/songs";
+import { getPaginationRange } from "~~/server/application/pagination";
 import { chartSlugMap, getChartSlug } from "~~/shared/utils/chartSlug";
 import type { Database } from "~~/types/database.types";
 import type { SupabaseClient } from "./client";
@@ -18,8 +23,9 @@ const TABLE_CHARTS = "charts";
 export class SupabaseSongRepository implements SongRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async list(): Promise<SongSummary[]> {
-    const { data, error } = await this.client
+  async list(query: SongListQuery): Promise<SongSummary[]> {
+    const { q } = query;
+    let supabaseQuery = this.client
       .from(TABLE_SONGS)
       .select(
         `
@@ -31,6 +37,13 @@ export class SupabaseSongRepository implements SongRepository {
       )
       .order("id", { ascending: true });
 
+    if (q) {
+      supabaseQuery = supabaseQuery.ilike("title", `%${q}%`);
+    }
+
+    const { from, to } = getPaginationRange(query);
+    const { data, error } = await supabaseQuery.range(from, to);
+
     if (error || !data) {
       throw new Error(error?.message ?? "Failed to fetch songs");
     }
@@ -40,9 +53,6 @@ export class SupabaseSongRepository implements SongRepository {
 
   async detail(params: SongDetailParams) {
     const slugDefinition = chartSlugMap[params.slug];
-    if (!slugDefinition) {
-      throw new UnknownChartSlugError();
-    }
 
     const { data, error } = await this.client
       .from(TABLE_CHARTS)
@@ -59,8 +69,8 @@ export class SupabaseSongRepository implements SongRepository {
       .eq("diff", slugDefinition.diff)
       .single();
 
-    if (error || !data || !data.song) {
-      throw new ChartNotFoundError();
+    if (error || !data) {
+      return null;
     }
 
     return SongChartDetailSchema.parse({

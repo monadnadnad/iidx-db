@@ -1,4 +1,4 @@
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE, type Pagination } from "~~/server/application/pagination";
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE, getPaginationRange, type Pagination } from "~~/server/application/pagination";
 import type {
   ListRecommendationsParams,
   RecommendationRepository,
@@ -46,9 +46,7 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
       query = query.eq("lane_text_1p", params.laneText1P);
     }
 
-    // 一旦ここに書いておく
-    const from = (pagination.page - 1) * pagination.perPage;
-    const to = from + pagination.perPage - 1;
+    const { from, to } = getPaginationRange(pagination);
     const { data, error } = await query.range(from, to);
 
     if (error || !data) {

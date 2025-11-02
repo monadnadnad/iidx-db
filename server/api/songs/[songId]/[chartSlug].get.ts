@@ -1,17 +1,15 @@
 import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { GetSongChartPageUseCase } from "~~/server/application/songs/getSongChartPageUseCase";
-import { ChartNotFoundError, UnknownChartSlugError } from "~~/server/domain/songs";
-import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
+import { GetSongChartUseCase } from "~~/server/application/songs/getSongChartUseCase";
+import { SONG_CHART_NOT_FOUND_MESSAGE } from "~~/server/application/songs/schema";
 import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
 import type { Database } from "~~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient<Database>(event);
   const songRepository = new SupabaseSongRepository(client);
-  const recommendationRepository = new SupabaseRecommendationRepository(client);
-  const useCase = new GetSongChartPageUseCase(songRepository, recommendationRepository);
+  const useCase = new GetSongChartUseCase(songRepository);
 
   try {
     return await useCase.execute({
@@ -27,7 +25,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    if (error instanceof UnknownChartSlugError || error instanceof ChartNotFoundError) {
+    if (error instanceof Error && error.message === SONG_CHART_NOT_FOUND_MESSAGE) {
       throw createError({
         statusCode: 404,
         statusMessage: error.message,
@@ -36,7 +34,7 @@ export default defineEventHandler(async (event) => {
 
     throw createError({
       statusCode: 500,
-      statusMessage: "Failed to fetch chart page data",
+      statusMessage: "Failed to fetch chart data",
       data: error instanceof Error ? error.message : String(error),
     });
   }
