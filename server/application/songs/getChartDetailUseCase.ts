@@ -16,10 +16,7 @@ export const ChartDetailRouteParamsSchema = z.object({
 });
 export type ChartDetailRouteParams = z.infer<typeof ChartDetailRouteParamsSchema>;
 
-export const ChartDetailResponseSchema = z.object({
-  song: SongSchema,
-  chart: ChartSchema,
-});
+export const ChartDetailResponseSchema = SongSchema.omit({ id: true }).extend(ChartSchema.shape);
 export type ChartDetailResponse = z.infer<typeof ChartDetailResponseSchema>;
 
 export class GetChartDetailUseCase {

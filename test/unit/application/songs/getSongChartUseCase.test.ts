@@ -12,24 +12,16 @@ const createSongRepositoryMock = () => ({
 });
 
 const makeSongChartDetail = (overrides: Partial<ChartDetailResponse> = {}): ChartDetailResponse => ({
-  song: {
-    id: 1,
-    title: "冥",
-    textage_tag: "mei",
-    bpm_min: 100,
-    bpm_max: 200,
-    ...overrides.song,
-  },
-  chart: {
-    id: 10,
-    song_id: 1,
-    play_mode: "SP",
-    diff: "A",
-    level: 12,
-    notes: 2000,
-    slug: "spa",
-    ...(overrides.chart ?? {}),
-  },
+  id: 1,
+  song_id: 1,
+  title: "冥",
+  textage_tag: "mei",
+  bpm_min: 100,
+  bpm_max: 200,
+  level: 12,
+  notes: 2000,
+  chartSlug: "spa",
+  ...overrides,
 });
 
 const makeRouteParams = (overrides: Partial<ChartDetailRouteParams> = {}): ChartDetailRouteParams => ({
@@ -56,11 +48,8 @@ describe("GetChartDetailUseCase", () => {
     const songRepository = createSongRepositoryMock();
     songRepository.detail.mockResolvedValue({
       ...makeSongChartDetail(),
-      chart: {
-        ...makeSongChartDetail().chart,
-        // @ts-expect-error invalid diff to trigger schema error
-        diff: "Z",
-      },
+      // @ts-expect-error invalid slug to trigger schema error
+      chartSlug: "invalid",
     });
 
     const useCase = new GetChartDetailUseCase(songRepository);

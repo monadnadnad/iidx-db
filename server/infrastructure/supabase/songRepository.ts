@@ -49,11 +49,12 @@ export class SupabaseSongRepository implements SongRepository {
         bpm_max: row.bpm_max,
         charts: row.charts
           .map((chart) => {
-            const slug = getChartSlug(chart.play_mode, chart.diff);
-            if (!slug) return null;
+            const { play_mode, diff, ...rest } = chart;
+            const chartSlug = getChartSlug(play_mode, diff);
+            if (!chartSlug) return null;
             return {
-              ...chart,
-              slug,
+              ...rest,
+              chartSlug,
             };
           })
           .filter((chart): chart is NonNullable<typeof chart> => chart !== null),
@@ -84,16 +85,15 @@ export class SupabaseSongRepository implements SongRepository {
     }
 
     return ChartDetailResponseSchema.parse({
-      song: data.song,
-      chart: {
-        id: data.id,
-        song_id: data.song_id,
-        play_mode: data.play_mode,
-        diff: data.diff,
-        level: data.level,
-        notes: data.notes,
-        slug: params.slug,
-      },
+      id: data.id,
+      song_id: data.song.id,
+      title: data.song.title,
+      textage_tag: data.song.textage_tag,
+      bpm_min: data.song.bpm_min,
+      bpm_max: data.song.bpm_max,
+      level: data.level,
+      notes: data.notes,
+      chartSlug: params.slug,
     });
   }
 }

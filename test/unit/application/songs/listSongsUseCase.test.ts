@@ -21,11 +21,9 @@ const makeSongWithCharts = (overrides: Partial<SongWithCharts> = {}): SongWithCh
     {
       id: 10,
       song_id: 1,
-      play_mode: "SP",
-      diff: "A",
       level: 12,
       notes: 2000,
-      slug: "spa",
+      chartSlug: "spa",
     },
   ],
   ...overrides,
