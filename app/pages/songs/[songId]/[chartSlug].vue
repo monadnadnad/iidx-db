@@ -40,7 +40,7 @@ import {
   CreateRecommendationRequestSchema,
   type RecommendationResponse,
 } from "~~/server/application/recommendations/schema";
-import type { SongChartDetail } from "~~/server/application/songs/schema";
+import type { SongChartDetail } from "~~/server/application/songs/getSongChartUseCase";
 
 const optionTypes = OPTION_TYPES;
 const playSides = PLAY_SIDES;

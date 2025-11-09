@@ -1,6 +1,7 @@
 import type { ChartSlug } from "~~/shared/utils/chartSlug";
 
-import type { SongChartDetail, SongListQuery, SongSummary } from "./schema";
+import type { ChartDetailResponse } from "./getChartDetailUseCase";
+import type { SongListQuery, SongListResponse } from "./listSongsUseCase";
 
 export type SongDetailParams = {
   songId: number;
@@ -8,6 +9,6 @@ export type SongDetailParams = {
 };
 
 export interface SongRepository {
-  list(query: SongListQuery): Promise<SongSummary[]>;
-  detail(params: SongDetailParams): Promise<SongChartDetail | null>;
+  list(query: SongListQuery): Promise<SongListResponse>;
+  detail(params: SongDetailParams): Promise<ChartDetailResponse | null>;
 }

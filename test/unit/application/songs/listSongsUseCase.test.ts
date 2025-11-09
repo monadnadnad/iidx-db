@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { ListSongsUseCase } from "~~/server/application/songs/listSongsUseCase";
-import type { SongSummary } from "~~/server/application/songs/schema";
+import {
+  ListSongsUseCase,
+  type SongListQuery,
+  type SongWithCharts,
+} from "~~/server/application/songs/listSongsUseCase";
 import type { SongRepository } from "~~/server/application/songs/songRepository";
 
 const createRepositoryMock = () => ({
   list: vi.fn<SongRepository["list"]>(),
 });
 
-const makeSongSummary = (overrides: Partial<SongSummary> = {}): SongSummary => ({
+const makeSongWithCharts = (overrides: Partial<SongWithCharts> = {}): SongWithCharts => ({
   id: 1,
   title: "冥",
   textage_tag: "mei",
@@ -31,13 +34,14 @@ const makeSongSummary = (overrides: Partial<SongSummary> = {}): SongSummary => (
 describe("ListSongsUseCase", () => {
   it("returns parsed song summaries from the repository", async () => {
     const repository = createRepositoryMock();
-    const expected = makeSongSummary();
+    const expected = makeSongWithCharts();
     repository.list.mockResolvedValue([expected]);
+    const query: SongListQuery = { page: 1, perPage: 20 };
 
     const useCase = new ListSongsUseCase(repository);
-    const result = await useCase.execute({});
+    const result = await useCase.execute(query);
 
-    expect(repository.list).toHaveBeenCalledTimes(1);
+    expect(repository.list).toHaveBeenCalledWith(query);
     expect(result).toEqual([expected]);
   });
 });

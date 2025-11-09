@@ -1,21 +1,22 @@
 import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { GetSongChartUseCase } from "~~/server/application/songs/getSongChartUseCase";
-import { SONG_CHART_NOT_FOUND_MESSAGE } from "~~/server/application/songs/schema";
+import {
+  ChartDetailRouteParamsSchema,
+  GetChartDetailUseCase,
+  SONG_CHART_NOT_FOUND_MESSAGE,
+} from "~~/server/application/songs/getChartDetailUseCase";
 import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
 import type { Database } from "~~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient<Database>(event);
   const songRepository = new SupabaseSongRepository(client);
-  const useCase = new GetSongChartUseCase(songRepository);
+  const useCase = new GetChartDetailUseCase(songRepository);
 
   try {
-    return await useCase.execute({
-      songId: getRouterParam(event, "songId"),
-      chartSlug: getRouterParam(event, "chartSlug"),
-    });
+    const params = await getValidatedRouterParams(event, ChartDetailRouteParamsSchema.parse);
+    return await useCase.execute(params);
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw createError({

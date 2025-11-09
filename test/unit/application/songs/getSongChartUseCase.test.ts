@@ -1,14 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { GetSongChartUseCase } from "~~/server/application/songs/getSongChartUseCase";
-import type { SongChartDetail } from "~~/server/application/songs/schema";
+import {
+  GetChartDetailUseCase,
+  type ChartDetailResponse,
+  type ChartDetailRouteParams,
+} from "~~/server/application/songs/getChartDetailUseCase";
 import type { SongRepository } from "~~/server/application/songs/songRepository";
 
 const createSongRepositoryMock = () => ({
   detail: vi.fn<SongRepository["detail"]>(),
 });
 
-const makeSongChartDetail = (overrides: Partial<SongChartDetail> = {}): SongChartDetail => ({
+const makeSongChartDetail = (overrides: Partial<ChartDetailResponse> = {}): ChartDetailResponse => ({
   song: {
     id: 1,
     title: "冥",
@@ -29,26 +32,24 @@ const makeSongChartDetail = (overrides: Partial<SongChartDetail> = {}): SongChar
   },
 });
 
-describe("GetSongChartUseCase", () => {
+const makeRouteParams = (overrides: Partial<ChartDetailRouteParams> = {}): ChartDetailRouteParams => ({
+  songId: 1,
+  chartSlug: "spa",
+  ...overrides,
+});
+
+describe("GetChartDetailUseCase", () => {
   it("loads song/chart detail", async () => {
     const songRepository = createSongRepositoryMock();
     const detail = makeSongChartDetail();
     songRepository.detail.mockResolvedValue(detail);
 
-    const useCase = new GetSongChartUseCase(songRepository);
+    const useCase = new GetChartDetailUseCase(songRepository);
 
-    const result = await useCase.execute({ songId: "1", chartSlug: "SPA" });
+    const result = await useCase.execute(makeRouteParams());
 
     expect(songRepository.detail).toHaveBeenCalledWith({ songId: 1, slug: "spa" });
     expect(result).toEqual(detail);
-  });
-
-  it("rejects when the slug is unknown", async () => {
-    const songRepository = createSongRepositoryMock();
-    const useCase = new GetSongChartUseCase(songRepository);
-
-    await expect(useCase.execute({ songId: "1", chartSlug: "unknown" })).rejects.toThrowError(/slug/i);
-    expect(songRepository.detail).not.toHaveBeenCalled();
   });
 
   it("rejects when repository detail violates schema", async () => {
@@ -62,16 +63,16 @@ describe("GetSongChartUseCase", () => {
       },
     });
 
-    const useCase = new GetSongChartUseCase(songRepository);
+    const useCase = new GetChartDetailUseCase(songRepository);
 
-    await expect(useCase.execute({ songId: 1, chartSlug: "spa" })).rejects.toThrowError();
+    await expect(useCase.execute(makeRouteParams())).rejects.toThrowError();
   });
 
   it("throws when the chart is not found", async () => {
     const songRepository = createSongRepositoryMock();
     songRepository.detail.mockResolvedValue(null);
-    const useCase = new GetSongChartUseCase(songRepository);
+    const useCase = new GetChartDetailUseCase(songRepository);
 
-    await expect(useCase.execute({ songId: 1, chartSlug: "spa" })).rejects.toThrowError(/not found/i);
+    await expect(useCase.execute(makeRouteParams())).rejects.toThrowError(/not found/i);
   });
 });

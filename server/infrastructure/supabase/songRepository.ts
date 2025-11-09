@@ -1,21 +1,13 @@
-import {
-  SongChartDetailSchema,
-  SongSummarySchema,
-  type SongListQuery,
-  type SongSummary,
-} from "~~/server/application/songs/schema";
-import type { SongDetailParams, SongRepository } from "~~/server/application/songs/songRepository";
 import { getPaginationRange } from "~~/server/application/pagination";
+import { ChartDetailResponseSchema } from "~~/server/application/songs/getChartDetailUseCase";
+import {
+  SongWithChartsSchema,
+  type SongListQuery,
+  type SongListResponse,
+} from "~~/server/application/songs/listSongsUseCase";
+import type { SongDetailParams, SongRepository } from "~~/server/application/songs/songRepository";
 import { chartSlugMap, getChartSlug } from "~~/shared/utils/chartSlug";
-import type { Database } from "~~/types/database.types";
 import type { SupabaseClient } from "./client";
-
-type SongRow = Database["public"]["Tables"]["songs"]["Row"];
-type ChartRow = Database["public"]["Tables"]["charts"]["Row"];
-
-type SongRowWithCharts = SongRow & {
-  charts: ChartRow[] | null;
-};
 
 const TABLE_SONGS = "songs";
 const TABLE_CHARTS = "charts";
@@ -23,7 +15,7 @@ const TABLE_CHARTS = "charts";
 export class SupabaseSongRepository implements SongRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async list(query: SongListQuery): Promise<SongSummary[]> {
+  async list(query: SongListQuery): Promise<SongListResponse> {
     const { q } = query;
     let supabaseQuery = this.client
       .from(TABLE_SONGS)
@@ -48,7 +40,25 @@ export class SupabaseSongRepository implements SongRepository {
       throw new Error(error?.message ?? "Failed to fetch songs");
     }
 
-    return data.map((row) => this.toSongSummary(row));
+    return data.map((row) => {
+      return SongWithChartsSchema.parse({
+        id: row.id,
+        title: row.title,
+        textage_tag: row.textage_tag,
+        bpm_min: row.bpm_min,
+        bpm_max: row.bpm_max,
+        charts: row.charts
+          .map((chart) => {
+            const slug = getChartSlug(chart.play_mode, chart.diff);
+            if (!slug) return null;
+            return {
+              ...chart,
+              slug,
+            };
+          })
+          .filter((chart): chart is NonNullable<typeof chart> => chart !== null),
+      });
+    });
   }
 
   async detail(params: SongDetailParams) {
@@ -73,7 +83,7 @@ export class SupabaseSongRepository implements SongRepository {
       return null;
     }
 
-    return SongChartDetailSchema.parse({
+    return ChartDetailResponseSchema.parse({
       song: data.song,
       chart: {
         id: data.id,
@@ -84,34 +94,6 @@ export class SupabaseSongRepository implements SongRepository {
         notes: data.notes,
         slug: params.slug,
       },
-    });
-  }
-
-  private toSongSummary(row: SongRowWithCharts): SongSummary {
-    const charts =
-      row.charts
-        ?.map((chart) => {
-          const slug = getChartSlug(chart.play_mode, chart.diff);
-          if (!slug) return null;
-          return {
-            id: chart.id,
-            song_id: chart.song_id,
-            play_mode: chart.play_mode,
-            diff: chart.diff,
-            level: chart.level,
-            notes: chart.notes,
-            slug,
-          };
-        })
-        .filter((chart): chart is NonNullable<typeof chart> => chart !== null) ?? [];
-
-    return SongSummarySchema.parse({
-      id: row.id,
-      title: row.title,
-      textage_tag: row.textage_tag,
-      bpm_min: row.bpm_min,
-      bpm_max: row.bpm_max,
-      charts,
     });
   }
 }
