@@ -1,4 +1,4 @@
-import type { ChartDiff, PlayMode } from "~~/shared/types";
+import type { ChartDiff, ChartSlug, PlayMode } from "../types";
 
 export const chartSlugMap = {
   spb: { mode: "SP", diff: "B" },
@@ -10,17 +10,7 @@ export const chartSlugMap = {
   dph: { mode: "DP", diff: "H" },
   dpa: { mode: "DP", diff: "A" },
   dpl: { mode: "DP", diff: "L" },
-} as const;
-
-export type ChartSlug = keyof typeof chartSlugMap;
-
-export const getChartSlug = (mode: PlayMode, diff: ChartDiff): ChartSlug | undefined => {
-  const slug = (mode + diff).toLowerCase();
-  if (slug in chartSlugMap) {
-    return slug as ChartSlug;
-  }
-  return undefined;
-};
+} as const satisfies Record<ChartSlug, { mode: PlayMode; diff: ChartDiff }>;
 
 export const chartDiffLabels: Record<ChartDiff, string> = {
   B: "BEGINNER",

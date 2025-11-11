@@ -1,6 +1,6 @@
-import type { OptionType, PlaySide } from "~~/shared/types";
 import type { Recommendation } from "~~/server/domain/recommendation";
-import type { Pagination } from "../pagination";
+import type { OptionType, PlaySide } from "~~/shared/types";
+import type { Pagination } from "../../domain/pagination";
 import type { RecommendationResponse } from "./schema";
 
 export type ListRecommendationsParams = {

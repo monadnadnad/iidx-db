@@ -1,9 +1,9 @@
 import { mirror } from "~~/shared/utils/laneText";
 
-import { PaginationSchema } from "../pagination";
+import { LaneTextSchema } from "../../domain/laneText";
+import { PaginationSchema } from "../../domain/pagination";
 import type { ListRecommendationsParams, RecommendationRepository } from "./recommendationRepository";
 import { RecommendationQuerySchema, type RecommendationResponse } from "./schema";
-import { LaneTextSchema } from "../../domain/laneText";
 
 export class ListRecommendationsUseCase {
   constructor(private readonly repository: Pick<RecommendationRepository, "list">) {}

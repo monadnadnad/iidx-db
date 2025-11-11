@@ -1,42 +1,40 @@
 import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import {
-  ChartDetailRouteParamsSchema,
-  GetChartDetailUseCase,
-  SONG_CHART_NOT_FOUND_MESSAGE,
-} from "~~/server/application/songs/getChartDetailUseCase";
 import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
 import type { Database } from "~~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const client = await serverSupabaseClient<Database>(event);
-  const songRepository = new SupabaseSongRepository(client);
-  const useCase = new GetChartDetailUseCase(songRepository);
+  const repository = new SupabaseSongRepository(client);
 
-  try {
-    const params = await getValidatedRouterParams(event, ChartDetailRouteParamsSchema.parse);
-    return await useCase.execute(params);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Invalid song chart parameters",
-        data: z.treeifyError(error),
-      });
-    }
-
-    if (error instanceof Error && error.message === SONG_CHART_NOT_FOUND_MESSAGE) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: error.message,
-      });
-    }
-
+  const result = await getValidatedRouterParams(
+    event,
+    z.object({
+      songId: z.coerce.number().int().positive(),
+      chartSlug: z.enum(CHART_SLUGS),
+    }).safeParse,
+  );
+  if (!result.success) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch chart data",
-      data: error instanceof Error ? error.message : String(error),
+      statusCode: 400,
+      statusMessage: "Invalid song chart parameters",
+      data: z.treeifyError(result.error),
     });
   }
+
+  const params = result.data;
+  const chart = await repository.findChart({
+    songId: params.songId,
+    slug: params.chartSlug,
+  });
+
+  if (!chart) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Chart not found",
+    });
+  }
+
+  return chart;
 });

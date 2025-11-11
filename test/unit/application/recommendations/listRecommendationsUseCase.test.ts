@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from "~~/server/application/pagination";
 import { ListRecommendationsUseCase } from "~~/server/application/recommendations/listRecommendationsUseCase";
 import type { RecommendationRepository } from "~~/server/application/recommendations/recommendationRepository";
 import type { RecommendationResponse } from "~~/server/application/recommendations/schema";
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE } from "~~/server/domain/pagination";
 
 const createRepositoryMock = () => {
   return {

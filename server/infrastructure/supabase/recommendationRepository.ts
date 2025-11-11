@@ -1,4 +1,3 @@
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE, getPaginationRange, type Pagination } from "~~/server/application/pagination";
 import type {
   ListRecommendationsParams,
   RecommendationRepository,
@@ -7,6 +6,7 @@ import {
   RecommendationResponseSchema,
   type RecommendationResponse,
 } from "~~/server/application/recommendations/schema";
+import { DEFAULT_PAGE, DEFAULT_PER_PAGE, getPaginationRange, type Pagination } from "~~/server/domain/pagination";
 import type { Recommendation } from "~~/server/domain/recommendation";
 import type { SupabaseClient } from "~~/server/infrastructure/supabase/client";
 import type { Database } from "~~/types/database.types";

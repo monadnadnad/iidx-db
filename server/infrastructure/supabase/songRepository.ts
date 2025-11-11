@@ -1,12 +1,6 @@
-import { getPaginationRange } from "~~/server/application/pagination";
-import { ChartDetailResponseSchema } from "~~/server/application/songs/getChartDetailUseCase";
-import {
-  SongWithChartsSchema,
-  type SongListQuery,
-  type SongListResponse,
-} from "~~/server/application/songs/listSongsUseCase";
-import type { SongDetailParams, SongRepository } from "~~/server/application/songs/songRepository";
-import { chartSlugMap, getChartSlug } from "~~/shared/utils/chartSlug";
+import { getPaginationRange } from "~~/server/domain/pagination";
+import { ChartViewSchema, SongWithChartsSchema } from "~~/server/domain/song/model";
+import type { FindChartParams, ListSongsParams, SongRepository } from "~~/server/domain/song/repository";
 import type { SupabaseClient } from "./client";
 
 const TABLE_SONGS = "songs";
@@ -15,7 +9,7 @@ const TABLE_CHARTS = "charts";
 export class SupabaseSongRepository implements SongRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async list(query: SongListQuery): Promise<SongListResponse> {
+  async listSongs(query: ListSongsParams) {
     const { q } = query;
     let supabaseQuery = this.client
       .from(TABLE_SONGS)
@@ -23,7 +17,7 @@ export class SupabaseSongRepository implements SongRepository {
         `
         id, title, textage_tag, bpm_min, bpm_max,
         charts (
-          id, song_id, play_mode, diff, level, notes
+          play_mode, diff, level, notes
         )
       `,
       )
@@ -50,11 +44,11 @@ export class SupabaseSongRepository implements SongRepository {
         charts: row.charts
           .map((chart) => {
             const { play_mode, diff, ...rest } = chart;
-            const chartSlug = getChartSlug(play_mode, diff);
-            if (!chartSlug) return null;
+            const chart_slug = (play_mode + diff).toLowerCase();
+            if (!Object.keys(chartSlugMap).includes(chart_slug)) return null;
             return {
               ...rest,
-              chartSlug,
+              chart_slug,
             };
           })
           .filter((chart): chart is NonNullable<typeof chart> => chart !== null),
@@ -62,16 +56,16 @@ export class SupabaseSongRepository implements SongRepository {
     });
   }
 
-  async detail(params: SongDetailParams) {
+  async findChart(params: FindChartParams) {
     const slugDefinition = chartSlugMap[params.slug];
 
     const { data, error } = await this.client
       .from(TABLE_CHARTS)
       .select(
         `
-        id, song_id, play_mode, diff, level, notes,
+        song_id, level, notes,
         song:song_id!inner (
-          id, title, textage_tag, bpm_min, bpm_max
+          title, textage_tag, bpm_min, bpm_max
         )
       `,
       )
@@ -84,16 +78,15 @@ export class SupabaseSongRepository implements SongRepository {
       return null;
     }
 
-    return ChartDetailResponseSchema.parse({
-      id: data.id,
-      song_id: data.song.id,
+    return ChartViewSchema.parse({
+      song_id: data.song_id,
       title: data.song.title,
       textage_tag: data.song.textage_tag,
       bpm_min: data.song.bpm_min,
       bpm_max: data.song.bpm_max,
       level: data.level,
       notes: data.notes,
-      chartSlug: params.slug,
+      chart_slug: params.slug,
     });
   }
 }

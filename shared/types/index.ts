@@ -9,3 +9,6 @@ export type PlayMode = (typeof PLAY_MODES)[number];
 
 export const CHART_DIFFS = ["B", "N", "H", "A", "L"] as const;
 export type ChartDiff = (typeof CHART_DIFFS)[number];
+
+export const CHART_SLUGS = ["spb", "spn", "sph", "spa", "spl", "dpn", "dph", "dpa", "dpl"] as const;
+export type ChartSlug = (typeof CHART_SLUGS)[number];
