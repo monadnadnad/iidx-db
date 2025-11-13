@@ -1,66 +1,83 @@
 <template>
   <div>
-    <p v-if="error">{{ error.message }}</p>
-    <p v-else-if="pending">Loading...</p>
+    <p v-if="chartError">{{ chartError.message }}</p>
+    <p v-else-if="chartPending">Loading...</p>
     <div v-else>
       <h1 data-test="song-title">{{ chartData?.title }}</h1>
       <p v-if="chartData" class="chart-meta">
         Lv.{{ chartData.level }} / {{ chartData.notes }} notes / BPM {{ chartData.bpm_min
         }}<span v-if="chartData.bpm_min !== chartData.bpm_max">-{{ chartData.bpm_max }}</span>
       </p>
+
       <form data-test="recommendation-form" @submit.prevent="submitRecommendation">
         <select v-model="recommendationForm.playSide">
-          <option v-for="side in playSides" :key="side" :value="side">{{ side }}</option>
+          <option v-for="side in PLAY_SIDES" :key="side" :value="side">{{ side }}</option>
         </select>
         <select v-model="recommendationForm.optionType">
-          <option v-for="type in optionTypes" :key="type" :value="type">{{ type }}</option>
+          <option v-for="type in OPTION_TYPES" :key="type" :value="type">{{ type }}</option>
         </select>
         <input v-if="canInputLaneText" v-model="recommendationForm.laneText" maxlength="7" placeholder="lane" />
         <input v-model="recommendationForm.comment" maxlength="255" placeholder="comment" />
-        <button type="submit" :disabled="recommendationsState.submitting">Send</button>
-        <span v-if="recommendationsState.formError" class="error">{{ recommendationsState.formError }}</span>
+        <button type="submit" :disabled="formState.submitting">Send</button>
+        <span v-if="formState.formError" class="error">
+          {{ formState.formError }}
+        </span>
       </form>
-      <p v-if="recommendationsState.error" class="error">{{ recommendationsState.error }}</p>
+
+      <p v-if="recommendationsError" class="error">
+        {{ recommendationsError.message }}
+      </p>
+
       <ul data-test="recommendation-list">
-        <li v-for="item in recommendationsState.items" :key="item.id">
+        <li v-for="item in recommendationsData || []" :key="item.recommendationId">
           {{ item.playSide }} / {{ item.optionType }} /
-          <span v-if="item.laneText1P">{{ item.playSide === "2P" ? mirror(item.laneText1P) : item.laneText1P }} /</span>
+          <span v-if="item.laneText">{{ item.laneText }} /</span>
           <span v-if="item.comment">{{ item.comment }} /</span>
           {{ item.createdAt }}
         </li>
-        <li v-if="!recommendationsState.pending && recommendationsState.items.length === 0">No recommendations</li>
-        <li v-if="recommendationsState.pending">Loading recommendations...</li>
+        <li v-if="!recommendationsPending && (!recommendationsData || recommendationsData.length === 0)">
+          No recommendations
+        </li>
+        <li v-if="recommendationsPending">Loading recommendations...</li>
       </ul>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from "vue";
-
-import { mirror } from "~~/shared/utils/laneText";
-import { OPTION_TYPES, PLAY_SIDES, type OptionType, type PlaySide } from "~~/shared/types";
-import {
-  CreateRecommendationRequestSchema,
-  type RecommendationResponse,
-} from "~~/server/application/recommendations/schema";
-
-const optionTypes = OPTION_TYPES;
-const playSides = PLAY_SIDES;
+import { RecommendationSchema, type RecommendationView } from "~~/server/domain/recommendation/model";
 
 const route = useRoute();
 const songId = computed(() => Number(route.params.songId));
 const chartSlug = computed(() => String(route.params.chartSlug));
 
-const { data: chartData, error, pending } = await useFetch(() => `/api/songs/${songId.value}/${chartSlug.value}`);
+const {
+  data: chartData,
+  error: chartError,
+  pending: chartPending,
+} = await useFetch(() => `/api/songs/${songId.value}/${chartSlug.value}`);
 
-const recommendationsState = reactive({
-  items: [] as RecommendationResponse[],
-  pending: false,
-  error: null as string | null,
-  formError: null as string | null,
-  submitting: false,
-});
+const chartId = computed(() => chartData.value?.id ?? null);
+
+const {
+  data: recommendationsData,
+  pending: recommendationsPending,
+  error: recommendationsError,
+  refresh: refreshRecommendations,
+} = await useAsyncData<RecommendationView[]>(
+  "recommendations-" + chartId.value,
+  async () => {
+    if (!chartId.value) {
+      return [];
+    }
+    return await $fetch<RecommendationView[]>("/api/recommendations", {
+      query: { chartId: chartId.value },
+    });
+  },
+  {
+    watch: [chartId],
+  },
+);
 
 const recommendationForm = reactive<{
   playSide: PlaySide;
@@ -74,34 +91,12 @@ const recommendationForm = reactive<{
   comment: "",
 });
 
+const formState = reactive({
+  submitting: false,
+  formError: null as string | null,
+});
+
 const canInputLaneText = computed(() => ["RANDOM", "R-RANDOM"].includes(recommendationForm.optionType));
-
-const chartId = computed(() => chartData.value?.id ?? null);
-
-const loadRecommendations = async () => {
-  if (!chartId.value) return;
-
-  recommendationsState.pending = true;
-  recommendationsState.error = null;
-  try {
-    recommendationsState.items = await $fetch<RecommendationResponse[]>("/api/recommendations", {
-      query: { chartId: chartId.value },
-    });
-  } catch (err) {
-    recommendationsState.error = err instanceof Error ? err.message : "Failed to fetch recommendations";
-  } finally {
-    recommendationsState.pending = false;
-  }
-};
-
-watch(
-  chartId,
-  async (id) => {
-    if (!id) return;
-    await loadRecommendations();
-  },
-  { immediate: true },
-);
 
 watch(
   () => recommendationForm.optionType,
@@ -113,25 +108,27 @@ watch(
 );
 
 const submitRecommendation = async () => {
-  if (!chartId.value || recommendationsState.submitting) return;
+  if (!chartId.value || formState.submitting) return;
 
-  recommendationsState.formError = null;
+  formState.formError = null;
 
   const laneText = recommendationForm.laneText.trim();
+  const comment = recommendationForm.comment.trim();
 
-  const parsed = CreateRecommendationRequestSchema.safeParse({
+  const parsed = RecommendationSchema.safeParse({
     chartId: chartId.value,
     playSide: recommendationForm.playSide,
     optionType: recommendationForm.optionType,
     laneText: laneText.length > 0 ? laneText : undefined,
-    comment: recommendationForm.comment.trim(),
+    comment,
   });
+
   if (!parsed.success) {
-    recommendationsState.formError = parsed.error.issues[0]!.message;
+    formState.formError = parsed.error.message;
     return;
   }
 
-  recommendationsState.submitting = true;
+  formState.submitting = true;
   try {
     await $fetch("/api/recommendations", {
       method: "POST",
@@ -139,11 +136,11 @@ const submitRecommendation = async () => {
     });
     recommendationForm.laneText = "";
     recommendationForm.comment = "";
-    await loadRecommendations();
+    await refreshRecommendations();
   } catch (err) {
-    recommendationsState.formError = err instanceof Error ? err.message : "Failed";
+    formState.formError = err instanceof Error ? err.message : "Failed";
   } finally {
-    recommendationsState.submitting = false;
+    formState.submitting = false;
   }
 };
 </script>

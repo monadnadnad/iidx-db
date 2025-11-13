@@ -1,31 +1,36 @@
 import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { ListRecommendationsUseCase } from "~~/server/application/recommendations/listRecommendationsUseCase";
+import { PaginationSchema } from "~~/server/domain/pagination";
 import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
-import type { Database } from "~~/types/database.types";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient<Database>(event);
+  const client = await serverSupabaseClient(event);
   const repository = new SupabaseRecommendationRepository(client);
-  const useCase = new ListRecommendationsUseCase(repository);
-  const rawQuery = getQuery(event);
 
-  try {
-    return await useCase.execute(rawQuery);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Invalid recommendation query",
-        data: z.treeifyError(error),
-      });
-    }
+  const result = await getValidatedQuery(
+    event,
+    PaginationSchema.extend({
+      viewPlaySide: z.enum(PLAY_SIDES).default("1P"),
+      chartId: z.coerce.number().int().positive().optional(),
+      optionType: z.enum(OPTION_TYPES).optional(),
+      laneText: LaneTextSchema.optional(),
+    }).safeParse,
+  );
 
+  if (!result.success) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch recommendations",
-      data: error instanceof Error ? error.message : String(error),
+      statusCode: 400,
+      statusMessage: "Invalid recommendation query",
+      data: z.treeifyError(result.error),
     });
   }
+
+  const { laneText, viewPlaySide, ...rest } = result.data;
+  const laneText1P = laneText && viewPlaySide === "2P" ? mirror(laneText) : laneText;
+
+  return await repository.listRecommendations({
+    laneText1P,
+    ...rest,
+  });
 });

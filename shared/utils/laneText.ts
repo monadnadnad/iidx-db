@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // Source: https://iidx.org/compendium/random#r-random
 export const RRANDOM_PATTERNS = [
   "2345671",
@@ -14,14 +16,21 @@ export const RRANDOM_PATTERNS = [
   "6543217",
 ] as const;
 
-export const isValidLaneText = (value: string) => {
+export const isValidLaneText = (value: string): value is LaneText => {
   if (value.length !== 7) return false;
   return value.split("").sort().join("") === "1234567";
 };
+export const LaneTextSchema = z.string().refine(isValidLaneText, { message: "Invalid lane text" });
+export type LaneText = z.infer<typeof LaneTextSchema>;
 
-export const isValidRRANDOMLaneText = (value: string) => {
+export const isValidRRANDOMLaneText = (value: string): value is LaneText => {
   const patterns = new Set<string>(RRANDOM_PATTERNS);
   return patterns.has(value);
 };
+export const RRandomLaneTextSchema = LaneTextSchema.refine(isValidRRANDOMLaneText, {
+  message: "Invalid R-RANDOM lane text",
+});
 
-export const mirror = (laneText: string): string => laneText.split("").reverse().join("");
+export function mirror(laneText: LaneText): LaneText {
+  return laneText.split("").reverse().join("") as LaneText;
+}

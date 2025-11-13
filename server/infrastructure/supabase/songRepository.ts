@@ -17,7 +17,7 @@ export class SupabaseSongRepository implements SongRepository {
         `
         id, title, textage_tag, bpm_min, bpm_max,
         charts (
-          play_mode, diff, level, notes
+          id, play_mode, diff, level, notes
         )
       `,
       )
@@ -44,11 +44,11 @@ export class SupabaseSongRepository implements SongRepository {
         charts: row.charts
           .map((chart) => {
             const { play_mode, diff, ...rest } = chart;
-            const chart_slug = (play_mode + diff).toLowerCase();
-            if (!Object.keys(chartSlugMap).includes(chart_slug)) return null;
+            const chartSlug = (play_mode + diff).toLowerCase();
+            if (!Object.keys(chartSlugMap).includes(chartSlug)) return null;
             return {
               ...rest,
-              chart_slug,
+              chartSlug,
             };
           })
           .filter((chart): chart is NonNullable<typeof chart> => chart !== null),
@@ -63,7 +63,7 @@ export class SupabaseSongRepository implements SongRepository {
       .from(TABLE_CHARTS)
       .select(
         `
-        song_id, level, notes,
+        id, song_id, level, notes,
         song:song_id!inner (
           title, textage_tag, bpm_min, bpm_max
         )
@@ -79,14 +79,15 @@ export class SupabaseSongRepository implements SongRepository {
     }
 
     return ChartViewSchema.parse({
-      song_id: data.song_id,
+      id: data.id,
+      songId: data.song_id,
       title: data.song.title,
       textage_tag: data.song.textage_tag,
       bpm_min: data.song.bpm_min,
       bpm_max: data.song.bpm_max,
       level: data.level,
       notes: data.notes,
-      chart_slug: params.slug,
+      chartSlug: params.slug,
     });
   }
 }

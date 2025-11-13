@@ -1,16 +1,8 @@
-import type {
-  ListRecommendationsParams,
-  RecommendationRepository,
-} from "~~/server/application/recommendations/recommendationRepository";
-import {
-  RecommendationResponseSchema,
-  type RecommendationResponse,
-} from "~~/server/application/recommendations/schema";
-import { DEFAULT_PAGE, DEFAULT_PER_PAGE, getPaginationRange, type Pagination } from "~~/server/domain/pagination";
-import type { Recommendation } from "~~/server/domain/recommendation";
+import { getPaginationRange } from "~~/server/domain/pagination";
+import { RecommendationViewSchema, type Recommendation } from "~~/server/domain/recommendation/model";
+import type { ListRecommendationsParams, RecommendationRepository } from "~~/server/domain/recommendation/repository";
 import type { SupabaseClient } from "~~/server/infrastructure/supabase/client";
 import type { Database } from "~~/types/database.types";
-
 const TABLE_RECOMMENDATIONS = "chart_recommendations";
 
 type RecommendationRow = Omit<Database["public"]["Tables"]["chart_recommendations"]["Row"], "user_id">;
@@ -18,47 +10,58 @@ type RecommendationRow = Omit<Database["public"]["Tables"]["chart_recommendation
 export class SupabaseRecommendationRepository implements RecommendationRepository {
   constructor(private readonly client: SupabaseClient) {}
 
-  async list(
-    params: ListRecommendationsParams,
-    pagination: Pagination = {
-      page: DEFAULT_PAGE,
-      perPage: DEFAULT_PER_PAGE,
-    },
-  ): Promise<RecommendationResponse[]> {
+  async listRecommendations(params: ListRecommendationsParams) {
+    const { perPage, page, chartId, optionType, laneText1P } = params;
     let query = this.client
       .from(TABLE_RECOMMENDATIONS)
       .select("id, chart_id, play_side, option_type, comment, lane_text_1p, created_at, updated_at")
       .order("created_at", { ascending: false });
 
-    if (params.chartId !== undefined) {
-      query = query.eq("chart_id", params.chartId);
+    if (chartId) {
+      query = query.eq("chart_id", chartId);
     }
 
-    if (params.playSide) {
-      query = query.eq("play_side", params.playSide);
+    if (optionType) {
+      query = query.eq("option_type", optionType);
     }
 
-    if (params.optionType) {
-      query = query.eq("option_type", params.optionType);
+    if (laneText1P) {
+      query = query.eq("lane_text_1p", laneText1P);
     }
 
-    if (params.laneText1P) {
-      query = query.eq("lane_text_1p", params.laneText1P);
-    }
-
-    const { from, to } = getPaginationRange(pagination);
+    const { from, to } = getPaginationRange({ perPage, page });
     const { data, error } = await query.range(from, to);
 
     if (error || !data) {
-      throw new Error(error?.message ?? "Failed to fetch recommendations");
+      throw error;
     }
 
-    return data.map((row) => this.toResponse(row));
+    return data.map((row: RecommendationRow) => {
+      const laneText1P = row.lane_text_1p;
+      const playSide = row.play_side;
+      const laneText = laneText1P && playSide === "2P" ? mirror(laneText1P) : (laneText1P ?? undefined);
+      return RecommendationViewSchema.parse({
+        recommendationId: row.id,
+        createdAt: new Date(row.created_at).toISOString(),
+        updatedAt: new Date(row.updated_at).toISOString(),
+        chartId: row.chart_id,
+        playSide,
+        laneText,
+        optionType: row.option_type,
+        comment: row.comment,
+      });
+    });
   }
 
-  async create(recommendation: Recommendation): Promise<RecommendationResponse> {
-    const { chartId, playSide, optionType, comment, laneText1P } = recommendation;
-
+  async createRecommendation(recommendation: Recommendation) {
+    const { chartId, playSide, optionType, comment } = recommendation;
+    const laneText =
+      optionType === "RANDOM"
+        ? recommendation.laneText
+        : optionType === "R-RANDOM" && recommendation.laneText
+          ? recommendation.laneText
+          : undefined;
+    const laneText1P = laneText && playSide === "2P" ? mirror(laneText) : laneText;
     const { data: recommendationRow, error: recommendationError } = await this.client
       .from(TABLE_RECOMMENDATIONS)
       .insert({
@@ -75,19 +78,15 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
       throw new Error(recommendationError?.message ?? "Failed to store recommendation");
     }
 
-    return this.toResponse(recommendationRow);
-  }
-
-  private toResponse(row: RecommendationRow): RecommendationResponse {
-    return RecommendationResponseSchema.parse({
-      id: row.id,
-      chartId: row.chart_id,
-      playSide: row.play_side,
-      optionType: row.option_type,
-      comment: row.comment ?? undefined,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      laneText1P: row.lane_text_1p ?? undefined,
+    return RecommendationViewSchema.parse({
+      recommendationId: recommendationRow.id,
+      createdAt: new Date(recommendationRow.created_at).toISOString(),
+      updatedAt: new Date(recommendationRow.updated_at).toISOString(),
+      chartId,
+      playSide,
+      laneText,
+      optionType,
+      comment,
     });
   }
 }

@@ -10,13 +10,14 @@ export const SongSchema = z.object({
 });
 
 export const ChartSchema = z.object({
-  chart_slug: z.enum(CHART_SLUGS),
+  id: z.number().int().positive(),
+  chartSlug: z.enum(CHART_SLUGS),
   level: z.number().int().positive(),
   notes: z.number().int().nonnegative(),
 });
 
 export const ChartViewSchema = ChartSchema.extend({
-  song_id: SongSchema.shape.id,
+  songId: SongSchema.shape.id,
   title: SongSchema.shape.title,
   textage_tag: SongSchema.shape.textage_tag,
   bpm_min: SongSchema.shape.bpm_min,
