@@ -70,6 +70,7 @@ const {
     if (!chartId.value) {
       return [];
     }
+
     return await $fetch<RecommendationView[]>("/api/recommendations", {
       query: { chartId: chartId.value },
     });
@@ -125,6 +126,7 @@ const submitRecommendation = async () => {
 
   if (!parsed.success) {
     formState.formError = parsed.error.message;
+
     return;
   }
 

@@ -31,6 +31,7 @@ const signIn = async () => {
   errorMessage.value = null;
   try {
     const { error } = await client.auth.signInWithOAuth({ provider: "google" });
+
     if (error) {
       errorMessage.value = error.message;
     }
@@ -42,6 +43,7 @@ const signIn = async () => {
 const signOut = async () => {
   errorMessage.value = null;
   const { error } = await client.auth.signOut();
+
   if (error) {
     errorMessage.value = error.message;
   }
