@@ -1,19 +1,36 @@
 <template>
-  <main class="min-h-screen bg-white p-10 text-slate-900">
+  <main class="min-h-screen p-10">
     <div class="space-y-4">
       <h1 class="text-2xl font-semibold">
-        IIDX DB テスト
+        テスト
       </h1>
-      <nav class="flex gap-4 text-sky-600">
-        <NuxtLink
-          to="/login"
-          class="font-medium underline"
-        >ログイン</NuxtLink>
-        <NuxtLink
-          to="/songs"
-          class="font-medium underline"
-        >曲一覧</NuxtLink>
-      </nav>
+      <NavigationMenu>
+        <NavigationMenuList>
+          <NavigationMenuItem
+            v-for="item in [{ title: '曲一覧', to: '/songs' }, { title: 'ログイン', to: '/login' }]"
+            :key="item.to"
+          >
+            <NuxtLink
+              v-slot="{ isActive, href, navigate }"
+              :to="item.to"
+              custom
+            >
+              <NavigationMenuLink
+                :active="isActive"
+                :href="href"
+                :class="navigationMenuTriggerStyle()"
+                @click="navigate"
+              >
+                {{ item.title }}
+              </NavigationMenuLink>
+            </NuxtLink>
+          </NavigationMenuItem>
+        </NavigationMenuList>
+      </NavigationMenu>
     </div>
   </main>
 </template>
+
+<script setup lang="ts">
+import { navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
+</script>
