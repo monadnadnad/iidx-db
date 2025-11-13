@@ -1,11 +1,19 @@
 <template>
   <div>
-    <div v-if="error">Failed to load: {{ error.message }}</div>
+    <div v-if="error">
+      Failed to load: {{ error.message }}
+    </div>
     <ul v-else>
-      <li v-for="song in songs" :key="song.id">
+      <li
+        v-for="song in songs"
+        :key="song.id"
+      >
         <div>{{ song.title }}</div>
         <ul>
-          <li v-for="chart in song.charts" :key="chart.id">
+          <li
+            v-for="chart in song.charts"
+            :key="chart.id"
+          >
             <NuxtLink :to="`/songs/${song.id}/${chart.chartSlug}`">
               {{ chart.chartSlug.toUpperCase() }}
             </NuxtLink>

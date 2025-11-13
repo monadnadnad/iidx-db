@@ -3,20 +3,39 @@
     <h1>Log In</h1>
 
     <section class="status">
-      <p v-if="user">Signed in as {{ user.email ?? user.id }}</p>
-      <p v-else>Not authenticated</p>
-      <p v-if="authError" class="error">{{ authError }}</p>
+      <p v-if="user">
+        Signed in as {{ user.email ?? user.id }}
+      </p>
+      <p v-else>
+        Not authenticated
+      </p>
+      <p
+        v-if="authError"
+        class="error"
+      >
+        {{ authError }}
+      </p>
     </section>
 
     <section class="actions">
-      <button type="button" @click="signIn">Sign in with Google</button>
-      <button type="button" :disabled="!user" @click="signOut">Sign out</button>
+      <button
+        type="button"
+        @click="signIn"
+      >
+        Sign in with Google
+      </button>
+      <button
+        type="button"
+        :disabled="!user"
+        @click="signOut"
+      >
+        Sign out
+      </button>
     </section>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
 import { useSupabaseClient, useSupabaseUser } from "#imports";
 
 import type { Database } from "~~/types/database.types";
@@ -35,7 +54,8 @@ const signIn = async () => {
     if (error) {
       errorMessage.value = error.message;
     }
-  } catch (err) {
+  }
+  catch (err) {
     errorMessage.value = err instanceof Error ? err.message : "Unexpected authentication error";
   }
 };

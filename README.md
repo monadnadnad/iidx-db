@@ -31,16 +31,11 @@ pnpm dev
 pnpm vitest run
 ```
 
-lint
+eslint
 
-```
+```sh
 pnpm lint
-```
-
-format
-
-```
-pnpm format
+pnpm lint:fix
 ```
 
 ## Supabase CLIの設定
@@ -94,6 +89,5 @@ pnpx supabase db reset
 DBに変更を加えた場合、スキーマの型を更新する。
 
 ```sh
-pnpx supabase gen types typescript --local > types/database.types.ts
-pnpm format
+pnpx supabase gen types typescript --local > types/database.types.ts && pnpm lint --fix
 ```

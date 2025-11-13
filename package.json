@@ -8,8 +8,6 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "format": "prettier . --write",
-    "format:check": "prettier . --check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
@@ -27,7 +25,6 @@
     "eslint": "^9.38.0",
     "happy-dom": "^20.0.5",
     "playwright-core": "^1.56.1",
-    "prettier": "^3.6.2",
     "supabase": "^2.53.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

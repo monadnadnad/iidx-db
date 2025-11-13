@@ -7,7 +7,7 @@ const BaseSchema = z.object({
     .string()
     .max(255, "comment must be 255 characters or fewer")
     .trim()
-    .transform((val) => (val === "" ? null : val))
+    .transform(val => (val === "" ? null : val))
     .nullish(),
 });
 

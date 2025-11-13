@@ -3,6 +3,7 @@ import { RecommendationViewSchema, type Recommendation } from "~~/server/domain/
 import type { ListRecommendationsParams, RecommendationRepository } from "~~/server/domain/recommendation/repository";
 import type { SupabaseClient } from "~~/server/infrastructure/supabase/client";
 import type { Database } from "~~/types/database.types";
+
 const TABLE_RECOMMENDATIONS = "chart_recommendations";
 
 type RecommendationRow = Omit<Database["public"]["Tables"]["chart_recommendations"]["Row"], "user_id">;
@@ -55,8 +56,8 @@ export class SupabaseRecommendationRepository implements RecommendationRepositor
 
   async createRecommendation(recommendation: Recommendation) {
     const { chartId, playSide, optionType, comment } = recommendation;
-    const laneText =
-      optionType === "RANDOM"
+    const laneText
+      = optionType === "RANDOM"
         ? recommendation.laneText
         : optionType === "R-RANDOM" && recommendation.laneText
           ? recommendation.laneText
