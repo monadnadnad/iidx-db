@@ -40,12 +40,13 @@ pnpm lint:fix
 
 ## Supabase CLIの設定
 
-ローカルにSupabaseを起動するため [これ](https://supabase.com/docs/guides/local-development?queryGroups=package-manager&package-manager=pnpm)を読んでおく。
+Supabase CLIを使ってローカルにSupabaseを起動する。
+Docker が必要なので、OSごとに適宜以下のようなものを使って環境を作っておく。
 
-Docker 上で動作するため、OSごとに別途以下のものが必要
+- Windows: WSL2 + Docker Desktop or Docker Engine
+- macOS: Docker Desktop for Mac
 
-- Windows：Docker Desktop + WSL2
-- macOS：Docker Desktop for Mac
+[これ](https://supabase.com/docs/guides/local-development?queryGroups=package-manager&package-manager=pnpm)を読んでおく。
 
 ### Supabase を起動する
 
@@ -89,5 +90,5 @@ pnpx supabase db reset
 DBに変更を加えた場合、スキーマの型を更新する。
 
 ```sh
-pnpx supabase gen types typescript --local > types/database.types.ts && pnpm lint --fix
+pnpx supabase gen types typescript --local > types/database.types.ts && pnpm lint:fix
 ```
