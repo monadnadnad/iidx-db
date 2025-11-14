@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "Vue.volar",
+        "dbaeumer.vscode-eslint",
+        "ms-ossdata.vscode-pgsql",
+        "YoavBls.pretty-ts-errors",
+        "GitHub.copilot"
+    ]
+}
