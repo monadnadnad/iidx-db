@@ -1,18 +1,36 @@
 import { z } from "zod";
 
-export const DEFAULT_PAGE = 1;
-export const DEFAULT_PER_PAGE = 20;
-export const MAX_PER_PAGE = 50;
+export const DEFAULT_LIMIT = 20;
+export const MAX_LIMIT = 50;
 
-export const PaginationSchema = z.object({
-  page: z.coerce.number().int().min(1).default(DEFAULT_PAGE),
-  perPage: z.coerce.number().int().min(1).max(MAX_PER_PAGE).default(DEFAULT_PER_PAGE),
+const PaginationParamsSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(MAX_LIMIT).optional(),
+  offset: z.coerce.number().int().min(0).optional(),
 });
 
-export type Pagination = z.infer<typeof PaginationSchema>;
+type PaginationParams = z.infer<typeof PaginationParamsSchema>;
 
-export const getPaginationRange = ({ page, perPage }: Pagination) => {
-  const from = (page - 1) * perPage;
-  const to = from + perPage - 1;
-  return { from, to };
+type PaginationKeys = keyof PaginationParams;
+
+export type Pagination = {
+  limit: number;
+  offset: number;
+};
+
+export const resolvePagination = ({ limit, offset }: PaginationParams): Pagination => {
+  const resolvedLimit = limit ?? DEFAULT_LIMIT;
+  const resolvedOffset = offset ?? 0;
+
+  return {
+    limit: resolvedLimit,
+    offset: resolvedOffset,
+  };
+};
+
+export const withPagination = <Shape extends z.ZodRawShape>(shape: Shape) =>
+  z.object({ ...shape, ...PaginationParamsSchema.shape });
+
+export const omitPagination = <T extends PaginationParams & Record<string, unknown>>(params: T) => {
+  const { limit, offset, ...rest } = params;
+  return rest as Omit<T, PaginationKeys>;
 };

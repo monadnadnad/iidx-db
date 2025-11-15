@@ -1,16 +1,16 @@
-import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { PaginationSchema } from "~~/server/domain/pagination";
-import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
+import { omitPagination, resolvePagination, withPagination } from "~~/server/domain/pagination";
+import { DrizzleRecommendationRepository } from "~~/server/infrastructure/drizzle/recommendationRepository";
+import { getDrizzleClient } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient(event);
-  const repository = new SupabaseRecommendationRepository(client);
+  const db = getDrizzleClient();
+  const repository = new DrizzleRecommendationRepository(db);
 
   const result = await getValidatedQuery(
     event,
-    PaginationSchema.extend({
+    withPagination({
       viewPlaySide: z.enum(PLAY_SIDES).default("1P"),
       chartId: z.coerce.number().int().positive().optional(),
       optionType: z.enum(OPTION_TYPES).optional(),
@@ -28,9 +28,12 @@ export default defineEventHandler(async (event) => {
 
   const { laneText, viewPlaySide, ...rest } = result.data;
   const laneText1P = laneText && viewPlaySide === "2P" ? mirror(laneText) : laneText;
+  const pagination = resolvePagination(result.data);
+  const filters = omitPagination(rest);
 
   return await repository.listRecommendations({
     laneText1P,
-    ...rest,
+    ...filters,
+    ...pagination,
   });
 });
