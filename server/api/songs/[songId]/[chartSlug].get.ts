@@ -1,12 +1,11 @@
-import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
-import type { Database } from "~~/types/database.types";
+import { DrizzleSongRepository } from "~~/server/infrastructure/drizzle/songRepository";
+import { getDrizzleClient } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient<Database>(event);
-  const repository = new SupabaseSongRepository(client);
+  const db = getDrizzleClient();
+  const repository = new DrizzleSongRepository(db);
 
   const result = await getValidatedRouterParams(
     event,

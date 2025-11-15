@@ -1,25 +1,22 @@
 import { serverSupabaseClient } from "#supabase/server";
 import { z } from "zod";
 
-import { SupabaseRecommendationRepository } from "~~/server/infrastructure/supabase/recommendationRepository";
+import { DrizzleRecommendationRepository } from "~~/server/infrastructure/drizzle/recommendationRepository";
+import { createSupabaseDrizzle } from "~~/server/utils/db";
 import { RecommendationSchema } from "../../domain/recommendation/model";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient(event);
-
+  const supabase = await serverSupabaseClient(event);
   const {
-    data: { user },
-    error: userError,
-  } = await client.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
-  if (userError || !user) {
+  if (!session) {
     throw createError({
       statusCode: 401,
-      statusMessage: userError?.message ?? "Authentication required",
+      statusMessage: "Authentication required",
     });
   }
-
-  const repository = new SupabaseRecommendationRepository(client);
 
   const result = await readValidatedBody(event, RecommendationSchema.safeParse);
 
@@ -33,5 +30,10 @@ export default defineEventHandler(async (event) => {
 
   const payload = result.data;
 
-  return await repository.createRecommendation(payload);
+  const drizzle = createSupabaseDrizzle(session.access_token);
+
+  return await drizzle.rls(async (db) => {
+    const repository = new DrizzleRecommendationRepository(db);
+    return repository.createRecommendation(payload);
+  });
 });

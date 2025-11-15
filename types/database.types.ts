@@ -82,24 +82,24 @@ export type Database = {
         Row: {
           diff: Database["public"]["Enums"]["chart_diff"];
           id: number;
-          level: number | null;
-          notes: number | null;
+          level: number;
+          notes: number;
           play_mode: Database["public"]["Enums"]["play_mode"];
           song_id: number;
         };
         Insert: {
           diff: Database["public"]["Enums"]["chart_diff"];
           id?: number;
-          level?: number | null;
-          notes?: number | null;
+          level: number;
+          notes: number;
           play_mode: Database["public"]["Enums"]["play_mode"];
           song_id: number;
         };
         Update: {
           diff?: Database["public"]["Enums"]["chart_diff"];
           id?: number;
-          level?: number | null;
-          notes?: number | null;
+          level?: number;
+          notes?: number;
           play_mode?: Database["public"]["Enums"]["play_mode"];
           song_id?: number;
         };
