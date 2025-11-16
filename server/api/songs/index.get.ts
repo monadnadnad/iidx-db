@@ -1,17 +1,16 @@
-import { serverSupabaseClient } from "#supabase/server";
 import z from "zod";
 
-import { SupabaseSongRepository } from "~~/server/infrastructure/supabase/songRepository";
-import type { Database } from "~~/types/database.types";
-import { PaginationSchema } from "../../domain/pagination";
+import { DrizzleSongRepository } from "~~/server/infrastructure/drizzle/songRepository";
+import { getDrizzleClient } from "~~/server/utils/db";
+import { omitPagination, resolvePagination, withPagination } from "../../domain/pagination";
 
 export default defineEventHandler(async (event) => {
-  const client = await serverSupabaseClient<Database>(event);
-  const repository = new SupabaseSongRepository(client);
+  const db = getDrizzleClient();
+  const repository = new DrizzleSongRepository(db);
 
   const result = await getValidatedQuery(
     event,
-    PaginationSchema.extend({
+    withPagination({
       q: z.string().trim().optional(),
     }).safeParse,
   );
@@ -24,8 +23,13 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const query = result.data;
-  const songs = await repository.listSongs(query);
+  const pagination = resolvePagination(result.data);
+  const filters = omitPagination(result.data);
+
+  const songs = await repository.listSongs({
+    ...filters,
+    ...pagination,
+  });
 
   return songs;
 });
